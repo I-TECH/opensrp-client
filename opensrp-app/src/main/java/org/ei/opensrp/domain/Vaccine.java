@@ -1,14 +1,18 @@
 package org.ei.opensrp.domain;
 
-import java.io.Serializable;
+import org.ei.opensrp.clientandeventmodel.Event;
+
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by keyman on 3/1/17.
  */
 public class Vaccine {
+    private static final String ZEIR_ID = "ZEIR_ID";
     Long id;
     String baseEntityId;
+    String programClientId;
     String name;
     Integer calculation;
     Date date;
@@ -23,6 +27,20 @@ public class Vaccine {
     public Vaccine(Long id, String baseEntityId, String name, Integer calculation, Date date, String anmId, String locationId, String syncStatus, Long updatedAt) {
         this.id = id;
         this.baseEntityId = baseEntityId;
+        this.programClientId = null;
+        this.name = name;
+        this.calculation = calculation;
+        this.date = date;
+        this.anmId = anmId;
+        this.locationId = locationId;
+        this.syncStatus = syncStatus;
+        this.updatedAt = updatedAt;
+    }
+
+    public Vaccine(Long id, String baseEntityId, String programClientId, String name, Integer calculation, Date date, String anmId, String locationId, String syncStatus, Long updatedAt) {
+        this.id = id;
+        this.baseEntityId = baseEntityId;
+        this.programClientId = programClientId;
         this.name = name;
         this.calculation = calculation;
         this.date = date;
@@ -46,6 +64,23 @@ public class Vaccine {
 
     public void setBaseEntityId(String baseEntityId) {
         this.baseEntityId = baseEntityId;
+    }
+
+    public String getProgramClientId() {
+        return programClientId;
+    }
+
+    public void setProgramClientId(String programClientId) {
+        this.programClientId = programClientId;
+    }
+
+    public HashMap<String, String> getIdentifiers() {
+        HashMap<String, String> identifiers = null;
+        if (programClientId != null) {
+            identifiers = new HashMap<>();
+            identifiers.put(ZEIR_ID, programClientId);
+        }
+        return identifiers;
     }
 
     public String getName() {

@@ -4,6 +4,7 @@ import org.json.JSONException;
 
 import android.support.v7.internal.widget.TintContextWrapper;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
@@ -46,7 +47,12 @@ public class GenericTextWatcher implements TextWatcher, View.OnFocusChangeListen
     }
 
     public void afterTextChanged(Editable editable) {
-        String text = editable.toString();
+        String text = (String) mView.getTag(R.id.raw_value);
+
+        if (text == null) {
+            text = editable.toString();
+        }
+
         Log.d("RealtimeValidation", "afterTextChanged called");
         JsonApi api = null;
         if(mView.getContext() instanceof JsonApi) {

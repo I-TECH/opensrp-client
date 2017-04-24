@@ -356,6 +356,7 @@ public class UserService {
 
     protected void setupContextForLogin(String userName, String password) {
         session().start(session().lengthInMilliseconds());
+        DrishtiApplication.getInstance().setPassword(password);
         session().setPassword(password);
     }
 

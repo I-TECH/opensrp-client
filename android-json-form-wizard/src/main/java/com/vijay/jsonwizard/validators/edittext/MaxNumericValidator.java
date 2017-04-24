@@ -20,10 +20,10 @@ public class MaxNumericValidator extends METValidator {
     public boolean isValid(@NonNull CharSequence text, boolean isEmpty) {
         if (!isEmpty) {
             try {
-                if (Double.parseDouble(text.toString()) <= maxValue) return true;
+                if (Double.parseDouble(text.toString()) > maxValue) return false;
             } catch (Exception e) {
             }
         }
-        return false;
+        return true;
     }
 }

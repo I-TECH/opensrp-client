@@ -10,4 +10,6 @@
 
     <include layout="@layout/content_child_immunization" />
 
+    <include layout="@layout/notification_base" />
+
 </android.support.design.widget.CoordinatorLayout>

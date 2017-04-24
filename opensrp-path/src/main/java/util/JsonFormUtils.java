@@ -1,8 +1,20 @@
 package util;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.preference.PreferenceManager;
+import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.vijay.jsonwizard.activities.JsonFormActivity;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -15,12 +27,21 @@ import org.ei.opensrp.clientandeventmodel.Obs;
 import org.ei.opensrp.domain.ProfileImage;
 import org.ei.opensrp.domain.Vaccine;
 import org.ei.opensrp.domain.Weight;
+import org.ei.opensrp.path.R;
+import org.ei.opensrp.path.application.VaccinatorApplication;
+import org.ei.opensrp.path.repository.BaseRepository;
+import org.ei.opensrp.path.repository.PathRepository;
+import org.ei.opensrp.path.repository.UniqueIdRepository;
+import org.ei.opensrp.path.repository.VaccineRepository;
+import org.ei.opensrp.path.repository.WeightRepository;
+import org.ei.opensrp.path.sync.ECSyncUpdater;
+import org.ei.opensrp.path.sync.PathClientProcessor;
+import org.ei.opensrp.repository.AllSharedPreferences;
 import org.ei.opensrp.repository.ImageRepository;
-import org.ei.opensrp.sync.ClientProcessor;
-import org.ei.opensrp.sync.CloudantDataHandler;
 import org.ei.opensrp.util.AssetHandler;
 import org.ei.opensrp.util.FormUtils;
 import org.ei.opensrp.view.activity.DrishtiApplication;
+import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,6 +54,8 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,6 +76,7 @@ public class JsonFormUtils {
     public static final String OPENMRS_ENTITY_PARENT = "openmrs_entity_parent";
     public static final String OPENMRS_CHOICE_IDS = "openmrs_choice_ids";
     public static final String OPENMRS_DATA_TYPE = "openmrs_data_type";
+    public static final String MOTHER_DEFAULT_DOB = "01-01-1960";
 
     private static final String PERSON_ATTRIBUTE = "person_attribute";
     private static final String PERSON_INDENTIFIER = "person_identifier";
@@ -65,16 +89,45 @@ public class JsonFormUtils {
     public static final String FIELDS = "fields";
     public static final String KEY = "key";
     private static final String ENTITY_ID = "entity_id";
+    private static final String RELATIONAL_ID = "relational_id";
     private static final String ENCOUNTER_TYPE = "encounter_type";
     public static final String STEP1 = "step1";
+    public static final String READ_ONLY = "read_only";
     private static final String METADATA = "metadata";
     public static final String ZEIR_ID = "ZEIR_ID";
     public static final String M_ZEIR_ID = "M_ZEIR_ID";
+    public static final String attributes = "attributes";
+    public static final  String encounterType = "Update Birth Registration";
+    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
 
     public static final SimpleDateFormat FORM_DATE = new SimpleDateFormat("dd-MM-yyyy");
+    //public static Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
+    //2007-03-31T04:00:00.000Z
+    public static  Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").registerTypeAdapter(DateTime.class, new DateTimeTypeConverter()).create();
 
-    public static void save(Context context, org.ei.opensrp.Context openSrpContext,
+
+    public static void saveForm(Context context, org.ei.opensrp.Context openSrpContext,
+                                String jsonString, String providerId) {
+        try {
+            JSONObject form = new JSONObject(jsonString);
+            if(form.getString("encounter_type").equals("Out of Catchment Service")) {
+                saveOutOfAreaService(context, openSrpContext, jsonString);
+            } else if (form.getString("encounter_type").equals("Birth Registration")) {
+                saveBirthRegistration(context, openSrpContext, jsonString, providerId, "Child_Photo", "child", "mother");
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        }
+    }
+
+    public static void saveAdverseEvent(String jsonString, String locationId, String baseEntityId,
+                                        String providerId) {
+        new SaveAdverseEventTask(jsonString, locationId, baseEntityId, providerId).execute();
+    }
+
+    private static void saveBirthRegistration(Context context, org.ei.opensrp.Context openSrpContext,
                             String jsonString, String providerId, String imageKey, String bindType,
                             String subBindType) {
         if (context == null || openSrpContext == null || StringUtils.isBlank(providerId)
@@ -83,6 +136,9 @@ public class JsonFormUtils {
         }
 
         try {
+            ECSyncUpdater ecUpdater = ECSyncUpdater.getInstance(context);
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+            AllSharedPreferences allSharedPreferences = new AllSharedPreferences(preferences);
 
             JSONObject jsonForm = new JSONObject(jsonString);
 
@@ -100,13 +156,37 @@ public class JsonFormUtils {
 
             JSONObject metadata = getJSONObject(jsonForm, METADATA);
 
+            // Replace values for location questions with their corresponding location IDs
+            for (int i = 0; i < fields.length(); i++) {
+                String key = fields.getJSONObject(i).getString("key");
+                if (key.equals("Home_Facility")
+                        || key.equals("Birth_Facility_Name")
+                        || key.equals("Residential_Area")) {
+                    try {
+                        String rawValue = fields.getJSONObject(i).getString("value");
+                        JSONArray valueArray = new JSONArray(rawValue);
+                        if (valueArray.length() > 0) {
+                            String lastLocationName = valueArray.getString(valueArray.length() - 1);
+                            String lastLocationId = getOpenMrsLocationId(openSrpContext, lastLocationName);
+                            fields.getJSONObject(i).put("value", lastLocationId);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, Log.getStackTraceString(e));
+                    }
+                } else if (key.equals("Mother_Guardian_Date_Birth")) {
+                    if(TextUtils.isEmpty(fields.getJSONObject(i).optString("value"))) {
+                        fields.getJSONObject(i).put("value", MOTHER_DEFAULT_DOB);
+                    }
+                }
+            }
+
             Client c = JsonFormUtils.createBaseClient(fields, entityId);
             Event e = JsonFormUtils.createEvent(openSrpContext, fields, metadata, entityId, encounterType, providerId, bindType);
 
             Client s = null;
 
             if (StringUtils.isNotBlank(subBindType)) {
-                s = JsonFormUtils.createSubformClient(context, fields, c, subBindType);
+                s = JsonFormUtils.createSubformClient(context, fields, c, subBindType,null);
             }
 
             Event se = null;
@@ -121,41 +201,261 @@ public class JsonFormUtils {
                 }
             }
 
-            CloudantDataHandler cloudantDataHandler = CloudantDataHandler.getInstance(context.getApplicationContext());
 
             if (c != null) {
-                org.ei.opensrp.cloudant.models.Client client = new org.ei.opensrp.cloudant.models.Client(c);
-                cloudantDataHandler.createClientDocument(client);
+                JSONObject clientJson = new JSONObject(gson.toJson(c));
+
+                ecUpdater.addClient(c.getBaseEntityId(), clientJson);
+
             }
 
             if (e != null) {
-                org.ei.opensrp.cloudant.models.Event event = new org.ei.opensrp.cloudant.models.Event(e);
-                cloudantDataHandler.createEventDocument(event);
+                JSONObject eventJson = new JSONObject(gson.toJson(e));
+                ecUpdater.addEvent(e.getBaseEntityId(), eventJson);
             }
 
             if (s != null) {
-                org.ei.opensrp.cloudant.models.Client client = new org.ei.opensrp.cloudant.models.Client(s);
-                cloudantDataHandler.createClientDocument(client);
+                JSONObject clientJson = new JSONObject(gson.toJson(s));
+
+                ecUpdater.addClient(s.getBaseEntityId(), clientJson);
 
             }
 
             if (se != null) {
-                org.ei.opensrp.cloudant.models.Event event = new org.ei.opensrp.cloudant.models.Event(se);
-                cloudantDataHandler.createEventDocument(event);
+                JSONObject eventJson = new JSONObject(gson.toJson(se));
+                ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
             }
 
             String zeirId = c.getIdentifier(ZEIR_ID);
             //mark zeir id as used
-            org.ei.opensrp.Context.getInstance().uniqueIdRepository().close(zeirId);
+           VaccinatorApplication.getInstance().uniqueIdRepository().close(zeirId);
 
             String imageLocation = getFieldValue(fields, imageKey);
             saveImage(context, providerId, entityId, imageLocation);
 
-            ClientProcessor.getInstance(context).processClient();
+            long lastSyncTimeStamp = allSharedPreferences.fetchLastUpdatedAtDate(0);
+            Date lastSyncDate = new Date(lastSyncTimeStamp);
+            PathClientProcessor.getInstance(context).processClient(ecUpdater.getEvents(lastSyncDate, BaseRepository.TYPE_Unsynced));
+            allSharedPreferences.saveLastUpdatedAtDate(lastSyncDate.getTime());
 
         } catch (Exception e) {
             Log.e(TAG, "", e);
         }
+    }
+
+    public static void editsave(Context context,org.ei.opensrp.Context openSrpContext, String jsonString, String providerId, String imageKey, String bindType, String subBindType) {
+        if (context == null || StringUtils.isBlank(providerId) || StringUtils.isBlank(jsonString)) {
+            return;
+        }
+
+        try {
+            ECSyncUpdater ecUpdater = ECSyncUpdater.getInstance(context);
+
+            JSONObject jsonForm = new JSONObject(jsonString);
+
+            String entityId = getString(jsonForm, ENTITY_ID);
+            String relationalId = getString(jsonForm, RELATIONAL_ID);
+            if (StringUtils.isBlank(entityId)) {
+                entityId = generateRandomUUIDString();
+            }
+
+            JSONArray fields = fields(jsonForm);
+            if (fields == null) {
+                return;
+            }
+
+
+            JSONObject metadata = getJSONObject(jsonForm, METADATA);
+
+            Client baseClient = JsonFormUtils.createBaseClient(fields, entityId);
+            Event e = JsonFormUtils.createEvent(openSrpContext, fields, metadata, entityId, encounterType, providerId, bindType);
+
+            Client subFormClient = null;
+
+            if (StringUtils.isNotBlank(subBindType)) {
+                subFormClient = JsonFormUtils.createSubformClient(context, fields, baseClient, subBindType,relationalId);
+            }
+            Event se = null;
+            if (subFormClient != null && e != null) {
+                JSONObject subBindTypeJson = getJSONObject(jsonForm, subBindType);
+                if (subBindTypeJson != null) {
+                    String subBindTypeEncounter = getString(subBindTypeJson, ENCOUNTER_TYPE);
+                    if (StringUtils.isNotBlank(subBindTypeEncounter)) {
+                        se = JsonFormUtils.createSubFormEvent(null, metadata, e, subFormClient.getBaseEntityId(), subBindTypeEncounter, providerId, subBindType);
+                    }
+                }
+            }
+            if (baseClient != null) {
+                mergeAndSaveClient(context,baseClient);
+
+            }
+            if (e != null) {
+
+                JSONObject eventJson = new JSONObject(gson.toJson(e));
+                ecUpdater.addEvent(e.getBaseEntityId(),eventJson);
+
+            }
+            if (subFormClient != null) {
+                mergeAndSaveClient(context, subFormClient);
+
+            }
+            if (se != null) {
+                JSONObject eventJson = new JSONObject(gson.toJson(se));
+                ecUpdater.addEvent(se.getBaseEntityId(),eventJson);
+            }
+
+
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+            AllSharedPreferences allSharedPreferences = new AllSharedPreferences(preferences);
+            long lastSyncTimeStamp = allSharedPreferences.fetchLastUpdatedAtDate(0);
+            Date lastSyncDate = new Date(lastSyncTimeStamp);
+            PathClientProcessor.getInstance(context).processClient(ecUpdater.getEvents(lastSyncDate,BaseRepository.TYPE_Unsynced));
+            allSharedPreferences.saveLastUpdatedAtDate(lastSyncDate.getTime());
+
+        } catch (Exception e) {
+            Log.e(TAG, "", e);
+        }
+    }
+
+    public static void mergeAndSaveClient(Context context,Client baseClient ) throws Exception {
+        ECSyncUpdater ecUpdater = ECSyncUpdater.getInstance(context);
+
+        JSONObject updatedClientJson = new JSONObject(gson.toJson(baseClient));
+
+        JSONObject originalClientJsonObject = ecUpdater.getClient(baseClient.getBaseEntityId());
+
+        JSONObject mergedJson= merge(originalClientJsonObject, updatedClientJson);
+
+        //TODO Save edit log
+
+        //save the updated client (the one updated and generated from the form) as EditClient to keep an edit log of the client doc
+       // originalClient.setType("PristineClient");
+        //originalClient.setRev(null);
+        //cloudantDataHandler.addClient(originalClient);
+
+        ecUpdater.addClient(baseClient.getBaseEntityId(),mergedJson);
+
+
+    }
+
+    public static void saveOutOfAreaService(Context context, org.ei.opensrp.Context openSrpContext,
+                                            String jsonString) {
+        SaveOutOfAreaServiceTask saveOutOfAreaServiceTask = new SaveOutOfAreaServiceTask(context,
+                openSrpContext, jsonString);
+
+        saveOutOfAreaServiceTask.execute();
+    }
+
+    /**
+     * Constructs a weight object using the out of service area form
+     *
+     * @param openSrpContext    The context to work with
+     * @param outOfAreaForm     Out of area form to extract the weight form
+     *
+     * @return  A weight object if weight recorded in form, or {@code null} if weight not recorded
+     * @throws Exception
+     */
+    private static Weight getWeightObject(org.ei.opensrp.Context openSrpContext, JSONObject outOfAreaForm) throws Exception {
+        Weight weight = null;
+        JSONArray fields = outOfAreaForm.getJSONObject("step1").getJSONArray("fields");
+        String serviceDate = null;
+        String zeirId = null;
+
+        int foundFields = 0;
+        for (int i = 0; i < fields.length(); i++) {
+            JSONObject curField = fields.getJSONObject(i);
+            if(curField.getString("key").equals("Weight_Kg")) {
+                foundFields++;
+                if(StringUtils.isNotEmpty(curField.getString("value"))) {
+                    weight = new Weight();
+                    weight.setBaseEntityId("");
+                    weight.setKg(Float.parseFloat(curField.getString("value")));
+                    weight.setAnmId(openSrpContext.allSharedPreferences().fetchRegisteredANM());
+                    weight.setLocationId(outOfAreaForm.getJSONObject("metadata")
+                            .getString("encounter_location"));
+                    weight.setUpdatedAt(null);
+                }
+            } else if (curField.getString("key").equals("OA_Service_Date")) {
+                foundFields++;
+                serviceDate = curField.getString("value");
+            } else if (curField.getString("key").equals("ZEIR_ID")) {
+                foundFields++;
+                zeirId = formatChildUniqueId(curField.getString("value"));
+            }
+
+            if (foundFields == 3) {
+                break;
+            }
+        }
+
+        if (weight != null && serviceDate != null) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            weight.setDate(dateFormat.parse(serviceDate));
+        }
+
+        if (weight != null && zeirId != null) {
+            weight.setProgramClientId(zeirId);
+        }
+
+        return weight;
+    }
+
+    /**
+     * Constructs a list of recorded vaccines from the out of area form provided
+     *
+     * @param openSrpContext    The context to use
+     * @param outOfAreaForm     Out of area form to extract recorded vaccines from
+     * @return  A list of recorded vaccines
+     */
+    private static ArrayList<Vaccine> getVaccineObjects(Context context,
+                                                        org.ei.opensrp.Context openSrpContext,
+                                                        JSONObject outOfAreaForm) throws Exception {
+        ArrayList<Vaccine> vaccines = new ArrayList<>();
+        JSONArray fields = outOfAreaForm.getJSONObject("step1").getJSONArray("fields");
+        String serviceDate = null;
+        String zeirId = null;
+
+        for (int i = 0; i < fields.length(); i++) {
+            JSONObject curField = fields.getJSONObject(i);
+            if (curField.has("is_vaccine_group")
+                    && curField.getBoolean("is_vaccine_group")
+                    && curField.getString("type").equals("check_box")) {
+                JSONArray options = curField.getJSONArray("options");
+                for (int j = 0; j < options.length(); j++) {
+                    JSONObject curOption = options.getJSONObject(j);
+                    if (curOption.getString("value").toLowerCase().equals(Boolean.TRUE.toString())) {
+                        Vaccine curVaccine = new Vaccine();
+                        curVaccine.setBaseEntityId("");
+                        curVaccine.setName(curOption.getString("key"));
+                        curVaccine.setAnmId(openSrpContext.allSharedPreferences().fetchRegisteredANM());
+                        curVaccine.setLocationId(outOfAreaForm.getJSONObject("metadata")
+                                .getString("encounter_location"));
+                        curVaccine.setCalculation(VaccinatorUtils.getVaccineCalculation(context,
+                                curVaccine.getName()));
+                        curVaccine.setUpdatedAt(null);
+
+                        vaccines.add(curVaccine);
+                    }
+                }
+            } else if (curField.getString("key").equals("OA_Service_Date")) {
+                serviceDate = curField.getString("value");
+            } else if (curField.getString("key").equals("ZEIR_ID")) {
+                zeirId = formatChildUniqueId(curField.getString("value"));
+            }
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        for (Vaccine curVaccine : vaccines) {
+            if (serviceDate != null) {
+                curVaccine.setDate(dateFormat.parse(serviceDate));
+            }
+
+            if (zeirId != null) {
+                curVaccine.setProgramClientId(zeirId);
+            }
+        }
+
+        return vaccines;
     }
 
     public static void saveImage(Context context, String providerId, String entityId, String imageLocation) {
@@ -287,7 +587,7 @@ public class JsonFormUtils {
         try {
             encounterLocation = metadata.getString("encounter_location");
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
         }
 
         Event e = (Event) new Event()
@@ -350,6 +650,13 @@ public class JsonFormUtils {
             String dataType = getString(jsonObject, OPENMRS_DATA_TYPE);
             if (StringUtils.isBlank(dataType)) {
                 dataType = "text";
+            }
+
+            if(dataType.equals("date") && StringUtils.isNotBlank(value) ){
+                String newValue = convertToOpenMRSDate(value);
+                if(newValue != null){
+                    value = newValue;
+                }
             }
 
             String entityVal = getString(jsonObject, OPENMRS_ENTITY);
@@ -428,16 +735,31 @@ public class JsonFormUtils {
         if (entityVal != null && entityVal.equals(entity)) {
             String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
 
-            if (entityIdVal.equals(ZEIR_ID) && StringUtils.isNotBlank(value) && !value.contains("-")) {
-                StringBuilder stringBuilder = new StringBuilder(value);
-                stringBuilder.insert(value.length() - 1, '-');
-                value = stringBuilder.toString();
+            if (entityIdVal.equals(ZEIR_ID)) {
+                value = formatChildUniqueId(value);
             }
 
             pids.put(entityIdVal, value);
         }
 
 
+    }
+
+    /**
+     * This method formats the child unique id obtained from a JSON Form to something that is useable
+     *
+     * @param unformattedId The unformatted unique identifier
+     *
+     * @return  A formatted ID or the original id if method is unable to format
+     */
+    private static String formatChildUniqueId(String unformattedId) {
+        if (StringUtils.isNotBlank(unformattedId) && !unformattedId.contains("-")) {
+            StringBuilder stringBuilder = new StringBuilder(unformattedId);
+            stringBuilder.insert(unformattedId.length() - 1, '-');
+            unformattedId = stringBuilder.toString();
+        }
+
+        return unformattedId;
     }
 
 
@@ -675,7 +997,7 @@ public class JsonFormUtils {
         }
     }
 
-    private static String generateRandomUUIDString() {
+    public static String generateRandomUUIDString() {
         return UUID.randomUUID().toString();
     }
 
@@ -691,13 +1013,13 @@ public class JsonFormUtils {
         }
     }
 
-    public static Client createSubformClient(Context context, JSONArray fields, Client parent, String bindType) throws ParseException {
+    public static Client createSubformClient(Context context, JSONArray fields, Client parent, String bindType, String relationalId) throws ParseException {
 
         if (StringUtils.isBlank(bindType)) {
             return null;
         }
 
-        String entityId = generateRandomUUIDString();
+        String entityId = relationalId==null?generateRandomUUIDString():relationalId;
         String firstName = getSubFormFieldValue(fields, FormEntityConstants.Person.first_name, bindType);
         String gender = getSubFormFieldValue(fields, FormEntityConstants.Person.gender, bindType);
         String bb = getSubFormFieldValue(fields, FormEntityConstants.Person.birthdate, bindType);
@@ -760,6 +1082,34 @@ public class JsonFormUtils {
         return c;
     }
 
+    private static JSONObject merge(JSONObject json1, JSONObject json2) {
+        JSONObject mergedJSON = new JSONObject();
+        try {
+            mergedJSON = new JSONObject(json1, getNames(json1));
+            for (String crunchifyKey : getNames(json2)) {
+                mergedJSON.put(crunchifyKey, json2.get(crunchifyKey));
+            }
+
+        } catch (JSONException e) {
+            throw new RuntimeException("JSON Exception" + e);
+        }
+        return mergedJSON;
+    }
+
+    private static String[] getNames(JSONObject jo) {
+        int length = jo.length();
+        if (length == 0) {
+            return null;
+        }
+        Iterator i = jo.keys();
+        String[] names = new String[length];
+        int j = 0;
+        while (i.hasNext()) {
+            names[j] = (String) i.next();
+            j += 1;
+        }
+        return names;
+    }
     public static Event createSubFormEvent(JSONArray fields, JSONObject metadata, Event parent, String entityId, String encounterType, String providerId, String bindType) {
 
 
@@ -1023,13 +1373,17 @@ public class JsonFormUtils {
                     getFormJsonData(array, map.getJSONObject(curKey), allowedLevels);
                 }
             }
+
+            array = sortTreeViewQuestionOptions(array);
         } catch (JSONException e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
+
         if (withOtherOption) {
             try {
                 JSONObject other = new JSONObject();
                 other.put("name", "Other");
+                other.put("key", "Other");
                 other.put("level", "");
                 array.put(other);
             } catch (JSONException e) {
@@ -1085,7 +1439,9 @@ public class JsonFormUtils {
 
     private static void getFormJsonData(JSONArray allLocationData, JSONObject openMrsLocationData, ArrayList<String> allowedLevels) throws JSONException {
         JSONObject jsonFormObject = new JSONObject();
-        jsonFormObject.put("name", openMrsLocationData.getJSONObject("node").getString("name"));
+        String name = openMrsLocationData.getJSONObject("node").getString("name");
+        jsonFormObject.put("name", getOpenMrsReadableName(name));
+        jsonFormObject.put("key", name);
         String level = "";
         try {
             level = openMrsLocationData.getJSONObject("node").getJSONArray("tags").getString(0);
@@ -1112,11 +1468,20 @@ public class JsonFormUtils {
         }
     }
 
-    public static void addChildRegLocHierarchyQuestions(JSONObject form, String encounterLocation,
+    public static String getOpenMrsReadableName(String name) {
+        String readableName = new String(name);
+
+        if (readableName.contains(":")) {
+            String[] splitName = readableName.split(":");
+            readableName = splitName[splitName.length - 1].trim();
+        }
+
+        return readableName;
+    }
+
+    public static void addChildRegLocHierarchyQuestions(JSONObject form,
                                                         org.ei.opensrp.Context context) {
         try {
-            form.getJSONObject("metadata").put("encounter_location",
-                    getOpenMrsLocationId(context, encounterLocation));
             JSONArray questions = form.getJSONObject("step1").getJSONArray("fields");
             ArrayList<String> allLevels = new ArrayList<>();
             allLevels.add("Country");
@@ -1155,10 +1520,125 @@ public class JsonFormUtils {
         }
     }
 
+    public static void addAddAvailableVaccines(Context context, JSONObject form) {
+        String supportedVaccinesString = VaccinatorUtils.getSupportedVaccines(context);
+        if (StringUtils.isNotEmpty(supportedVaccinesString) && form != null) {
+            // For each of the vaccine groups, create a checkbox question
+            try {
+                JSONArray questionList = form.getJSONObject("step1").getJSONArray("fields");
+                JSONObject vaccinationLabel = new JSONObject();
+                vaccinationLabel.put("key", "Vaccines_Provided_Label");
+                vaccinationLabel.put("type", "label");
+                vaccinationLabel.put("text", "Which vaccinations were provided?");
+                vaccinationLabel.put("openmrs_entity_parent", "-");
+                vaccinationLabel.put("openmrs_entity", "-");
+                vaccinationLabel.put("openmrs_entity_id", "-");
+                questionList.put(vaccinationLabel);
+                JSONArray supportedVaccines = new JSONArray(supportedVaccinesString);
+
+                HashMap<String, ArrayList<JSONObject>> vaccineTypeConstraints = new HashMap<>();
+                for (int i = 0; i < supportedVaccines.length(); i++) {
+                    JSONObject curVaccineGroup = supportedVaccines.getJSONObject(i);
+                    JSONArray vaccines = curVaccineGroup.getJSONArray("vaccines");
+                    for (int j = 0; j < vaccines.length(); j++) {
+                        JSONObject curVaccine = vaccines.getJSONObject(j);
+                        if (!vaccineTypeConstraints.containsKey(curVaccine.getString("type"))) {
+                            vaccineTypeConstraints.put(curVaccine.getString("type"),
+                                    new ArrayList<JSONObject>());
+                        }
+                        ArrayList<String> vaccineNamesDefined = new ArrayList<>();
+                        if (curVaccine.has("vaccine_separator")) {
+                            String unsplitNames = curVaccine.getString("name");
+                            String separator = curVaccine.getString("vaccine_separator");
+                            String[] splitValues = unsplitNames.split(separator);
+                            for (int k = 0; k < splitValues.length; k++) {
+                                vaccineNamesDefined.add(splitValues[k]);
+                            }
+                        } else {
+                            vaccineNamesDefined.add(curVaccine.getString("name"));
+                        }
+
+                        for (String curVaccineName : vaccineNamesDefined) {
+                            JSONObject curConstraint = new JSONObject();
+                            curConstraint.put("vaccine", curVaccineName);
+                            curConstraint.put("type", "array");
+                            curConstraint.put("ex",
+                                    "notEqualTo(step1:" + curVaccineGroup.getString("id") + ", \"[\"" + curVaccineName + "\"]\")");
+                            curConstraint.put("err", "Cannot be given with the other " + curVaccine.getString("type") + " dose");
+                            vaccineTypeConstraints.get(curVaccine.getString("type")).add(curConstraint);
+                        }
+                    }
+                }
+
+                for (int i = 0; i < supportedVaccines.length(); i++) {
+                    JSONObject curVaccineGroup = supportedVaccines.getJSONObject(i);
+                    JSONObject curQuestion = new JSONObject();
+                    curQuestion.put("key", curVaccineGroup.getString("id"));
+                    curQuestion.put("type", "check_box");
+                    curQuestion.put("is_vaccine_group", true);
+                    curQuestion.put("label", curVaccineGroup.getString("name"));
+                    curQuestion.put("openmrs_entity_parent", "-");
+                    curQuestion.put("openmrs_entity", "-");
+                    curQuestion.put("openmrs_entity_id", "-");
+
+                    JSONArray vaccines = curVaccineGroup.getJSONArray("vaccines");
+                    JSONArray options = new JSONArray();
+                    for (int j = 0; j < vaccines.length(); j++) {
+                        ArrayList<String> definedVaccineNames = new ArrayList<>();
+                        if (vaccines.getJSONObject(j).has("vaccine_separator")) {
+                            String rawNames = vaccines.getJSONObject(j).getString("name");
+                            String separator = vaccines.getJSONObject(j).getString("vaccine_separator");
+                            String[] split = rawNames.split(separator);
+                            for (int k = 0; k < split.length; k++) {
+                                definedVaccineNames.add(split[k]);
+                            }
+                        } else {
+                            definedVaccineNames.add(vaccines.getJSONObject(j).getString("name"));
+                        }
+
+                        for (String curVaccineName : definedVaccineNames) {
+                            JSONObject curVaccines = new JSONObject();
+                            curVaccines.put("key", curVaccineName);
+                            curVaccines.put("text", curVaccineName);
+                            curVaccines.put("value", "false");
+                            JSONArray constraints = new JSONArray();
+
+                            // Add the constraints
+                            if (vaccineTypeConstraints.containsKey(vaccines.getJSONObject(j).getString("type"))) {
+                                for (JSONObject curConstraint : vaccineTypeConstraints.get(vaccines.getJSONObject(j).getString("type"))) {
+                                    if (!curConstraint.getString("vaccine")
+                                            .equals(curVaccineName)) {
+                                        JSONObject constraintClone = new JSONObject(curConstraint.toString());
+                                        constraintClone.remove("vaccine");
+                                        constraints.put(constraintClone);
+                                    }
+                                }
+                            }
+
+                            if (constraints.length() > 0) {
+                                curVaccines.put("constraints", constraints);
+                            }
+
+                            options.put(curVaccines);
+                        }
+                    }
+
+                    curQuestion.put("options", options);
+                    questionList.put(curQuestion);
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, Log.getStackTraceString(e));
+            }
+        }
+    }
+
     public static void createWeightEvent(Context context, Weight weight, String eventType, String entityType, JSONArray fields) {
         try {
-            Event e = (Event) new Event()
+            PathRepository db = (PathRepository) VaccinatorApplication.getInstance().getRepository();
+
+            Event event = (Event) new Event()
                     .withBaseEntityId(weight.getBaseEntityId())
+                    .withIdentifiers(weight.getIdentifiers())
                     .withEventDate(weight.getDate())
                     .withEventType(eventType)
                     .withLocationId(weight.getLocationId())
@@ -1172,15 +1652,15 @@ public class JsonFormUtils {
                     JSONObject jsonObject = getJSONObject(fields, i);
                     String value = getString(jsonObject, VALUE);
                     if (StringUtils.isNotBlank(value)) {
-                        addObservation(e, jsonObject);
+                        addObservation(event, jsonObject);
                     }
                 }
 
-            CloudantDataHandler cloudantDataHandler = CloudantDataHandler.getInstance(context.getApplicationContext());
 
-            if (e != null) {
-                org.ei.opensrp.cloudant.models.Event event = new org.ei.opensrp.cloudant.models.Event(e);
-                cloudantDataHandler.createEventDocument(event);
+            if (event != null) {
+                JSONObject eventJson = new JSONObject(JsonFormUtils.gson.toJson(event));
+                db.addEvent(event.getBaseEntityId(), eventJson);
+
             }
         } catch (Exception e) {
             Log.e(TAG, e.toString(), e);
@@ -1189,8 +1669,11 @@ public class JsonFormUtils {
 
     public static void createVaccineEvent(Context context, Vaccine vaccine, String eventType, String entityType, JSONArray fields) {
         try {
-            Event e = (Event) new Event()
+            PathRepository db = (PathRepository) VaccinatorApplication.getInstance().getRepository();
+
+            Event event = (Event) new Event()
                     .withBaseEntityId(vaccine.getBaseEntityId())
+                    .withIdentifiers(vaccine.getIdentifiers())
                     .withEventDate(vaccine.getDate())
                     .withEventType(eventType)
                     .withLocationId(vaccine.getLocationId())
@@ -1204,15 +1687,14 @@ public class JsonFormUtils {
                     JSONObject jsonObject = getJSONObject(fields, i);
                     String value = getString(jsonObject, VALUE);
                     if (StringUtils.isNotBlank(value)) {
-                        addObservation(e, jsonObject);
+                        addObservation(event, jsonObject);
                     }
                 }
 
-            CloudantDataHandler cloudantDataHandler = CloudantDataHandler.getInstance(context.getApplicationContext());
 
-            if (e != null) {
-                org.ei.opensrp.cloudant.models.Event event = new org.ei.opensrp.cloudant.models.Event(e);
-                cloudantDataHandler.createEventDocument(event);
+            if (event != null) {
+                JSONObject eventJson = new JSONObject(JsonFormUtils.gson.toJson(event));
+                db.addEvent(event.getBaseEntityId(), eventJson);
             }
         } catch (Exception e) {
             Log.e(TAG, e.toString(), e);
@@ -1221,7 +1703,7 @@ public class JsonFormUtils {
 
     public static String getOpenMrsLocationId(org.ei.opensrp.Context context,
                                        String locationName) throws JSONException {
-        String response = null;
+        String response = locationName;
 
         if (locationName != null) {
             JSONObject locationData = new JSONObject(context.anmLocationController().get());
@@ -1265,5 +1747,449 @@ public class JsonFormUtils {
         }
 
         return null;
+    }
+
+    public static String getOpenMrsLocationName(org.ei.opensrp.Context context,
+                                              String locationId) {
+        String response = locationId;
+        try {
+            if (locationId != null) {
+                JSONObject locationData = new JSONObject(context.anmLocationController().get());
+                Log.d(TAG, "Location data is "+locationData);
+                if (locationData.has("locationsHierarchy")
+                        && locationData.getJSONObject("locationsHierarchy").has("map")) {
+                    JSONObject map = locationData.getJSONObject("locationsHierarchy").getJSONObject("map");
+                    Iterator<String> keys = map.keys();
+                    while (keys.hasNext()) {
+                        String curKey = keys.next();
+                        String curResult = getOpenMrsLocationName(locationId, map.getJSONObject(curKey));
+
+                        if (curResult != null) {
+                            response = curResult;
+                            break;
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "locationData doesn't have locationHierarchy");
+                }
+            } else {
+                Log.e(TAG, "Location id is null");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        }
+
+        return response;
+    }
+
+    private static String getOpenMrsLocationName(String locationId, JSONObject openMrsLocations)
+            throws JSONException {
+        String id = openMrsLocations.getJSONObject("node").getString("locationId");
+        Log.d(TAG, "Current location id is "+id);
+        if (locationId.equals(id)) {
+            return openMrsLocations.getJSONObject("node").getString("name");
+        }
+
+        if (openMrsLocations.has("children")) {
+            Iterator<String> childIterator = openMrsLocations.getJSONObject("children").keys();
+            while (childIterator.hasNext()) {
+                String curChildKey = childIterator.next();
+                String curResult = getOpenMrsLocationName(locationId,
+                        openMrsLocations.getJSONObject("children").getJSONObject(curChildKey));
+                if (curResult != null) {
+                    return curResult;
+                }
+            }
+        } else {
+            Log.d(TAG, id+" does not have children");
+        }
+
+        return null;
+    }
+
+
+    public static void saveReportDeceased(Context context, org.ei.opensrp.Context openSrpContext,
+                                           String jsonString, String providerId, String locationId, String entityId){
+
+        try {
+            PathRepository db = (PathRepository) VaccinatorApplication.getInstance().getRepository();
+
+            JSONObject jsonForm = new JSONObject(jsonString);
+
+            JSONArray fields = fields(jsonForm);
+            if (fields == null) {
+                return;
+            }
+
+            String bindType = "child";
+            String encounterDateField = getFieldValue(fields, "Date_of_Death");
+
+            String encounterType = getString(jsonForm, ENCOUNTER_TYPE);
+            JSONObject metadata = getJSONObject(jsonForm, METADATA);
+
+            Date encounterDate = new Date();
+            if (StringUtils.isNotBlank(encounterDateField)) {
+                Date dateTime = formatDate(encounterDateField, false);
+                if (dateTime != null) {
+                    encounterDate = dateTime;
+                }
+            }
+
+            Event event = (Event) new Event()
+                    .withBaseEntityId(entityId)//should be different for main and subform
+                    .withEventDate(encounterDate)
+                    .withEventType(encounterType)
+                    .withLocationId(locationId)
+                    .withProviderId(providerId)
+                    .withEntityType(bindType)
+                    .withFormSubmissionId(generateRandomUUIDString())
+                    .withDateCreated(new Date());
+
+            for (int i = 0; i < fields.length(); i++) {
+                JSONObject jsonObject = getJSONObject(fields, i);
+                String value = getString(jsonObject, VALUE);
+                if (StringUtils.isNotBlank(value)) {
+                    addObservation(event, jsonObject);
+                }
+            }
+
+            if (metadata != null) {
+                Iterator<?> keys = metadata.keys();
+
+                while (keys.hasNext()) {
+                    String key = (String) keys.next();
+                    JSONObject jsonObject = getJSONObject(metadata, key);
+                    String value = getString(jsonObject, VALUE);
+                    if (StringUtils.isNotBlank(value)) {
+                        String entityVal = getString(jsonObject, OPENMRS_ENTITY);
+                        if (entityVal != null) {
+                            if (entityVal.equals(CONCEPT)) {
+                                addToJSONObject(jsonObject, KEY, key);
+                                addObservation(event, jsonObject);
+                            } else if (entityVal.equals(ENCOUNTER)) {
+                                String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
+                                if (entityIdVal.equals(FormEntityConstants.Encounter.encounter_date.name())) {
+                                    Date eDate = formatDate(value, false);
+                                    if (eDate != null) {
+                                        event.setEventDate(eDate);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            if (event != null) {
+                JSONObject eventJson = new JSONObject(JsonFormUtils.gson.toJson(event));
+                db.addEvent(event.getBaseEntityId(), eventJson);
+
+            }
+
+        }catch (Exception e){
+            Log.e(TAG, "", e);
+        }
+    }
+
+    private static String convertToOpenMRSDate(String value) {
+        try {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            Date date = simpleDateFormat.parse(value);
+
+            SimpleDateFormat openmrsDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            return openmrsDateFormat.format(date);
+        } catch (Exception e) {
+            Log.e(TAG, "", e);
+        }
+        return null;
+    }
+
+    private static class SaveOutOfAreaServiceTask extends AsyncTask<Void, Void, Void> {
+
+        private final Context context;
+        private final org.ei.opensrp.Context openSrpContext;
+        private final String formString;
+
+        public SaveOutOfAreaServiceTask(Context context, org.ei.opensrp.Context openSrpContext, String formString) {
+            this.context = context;
+            this.openSrpContext = openSrpContext;
+            this.formString = formString;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                JSONObject form = new JSONObject(formString);
+
+                // Create a weight object if weight was recorded
+                Weight weight = getWeightObject(openSrpContext, form);
+                if (weight != null) {
+                    WeightRepository weightRepository = VaccinatorApplication.getInstance().weightRepository();
+                    weightRepository.add(weight);
+                }
+
+                // Create a vaccine object for all recorded vaccines
+                ArrayList<Vaccine> vaccines = getVaccineObjects(context, openSrpContext, form);
+                if (vaccines.size() > 0) {
+                    VaccineRepository vaccineRepository = VaccinatorApplication.getInstance().vaccineRepository();
+                    for(Vaccine curVaccine : vaccines) {
+                        vaccineRepository.add(curVaccine);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, Log.getStackTraceString(e));
+            }
+            return null;
+        }
+    }
+
+    private static class SaveAdverseEventTask extends AsyncTask<Void, Void, Void> {
+        private final String jsonString;
+        private final String locationId;
+        private final String baseEntityId;
+        private final String providerId;
+
+        public SaveAdverseEventTask(String jsonString, String locationId, String baseEntityId,
+                                    String providerId) {
+            this.jsonString = jsonString;
+            this.locationId = locationId;
+            this.baseEntityId = baseEntityId;
+            this.providerId = providerId;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                PathRepository db = (PathRepository) VaccinatorApplication.getInstance().getRepository();
+
+                JSONObject jsonForm = new JSONObject(jsonString);
+
+                JSONArray fields = fields(jsonForm);
+                if (fields == null) {
+                    return null;
+                }
+
+                String bindType = "child";
+                String encounterDateField = getFieldValue(fields, "Date_Reaction");
+
+                String encounterType = getString(jsonForm, ENCOUNTER_TYPE);
+                JSONObject metadata = getJSONObject(jsonForm, METADATA);
+
+                Date encounterDate = new Date();
+                if (StringUtils.isNotBlank(encounterDateField)) {
+                    Date dateTime = formatDate(encounterDateField, false);
+                    if (dateTime != null) {
+                        encounterDate = dateTime;
+                    }
+                }
+
+                Event event = (Event) new Event()
+                        .withBaseEntityId(baseEntityId)//should be different for main and subform
+                        .withEventDate(encounterDate)
+                        .withEventType(encounterType)
+                        .withLocationId(locationId)
+                        .withProviderId(providerId)
+                        .withEntityType(bindType)
+                        .withFormSubmissionId(generateRandomUUIDString())
+                        .withDateCreated(new Date());
+
+                for (int i = 0; i < fields.length(); i++) {
+                    JSONObject jsonObject = getJSONObject(fields, i);
+                    String value = getString(jsonObject, VALUE);
+                    if (StringUtils.isNotBlank(value)) {
+                        addObservation(event, jsonObject);
+                    }
+                }
+
+                if (metadata != null) {
+                    Iterator<?> keys = metadata.keys();
+
+                    while (keys.hasNext()) {
+                        String key = (String) keys.next();
+                        JSONObject jsonObject = getJSONObject(metadata, key);
+                        String value = getString(jsonObject, VALUE);
+                        if (StringUtils.isNotBlank(value)) {
+                            String entityVal = getString(jsonObject, OPENMRS_ENTITY);
+                            if (entityVal != null) {
+                                if (entityVal.equals(CONCEPT)) {
+                                    addToJSONObject(jsonObject, KEY, key);
+                                    addObservation(event, jsonObject);
+                                } else if (entityVal.equals(ENCOUNTER)) {
+                                    String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
+                                    if (entityIdVal.equals(
+                                            FormEntityConstants.Encounter.encounter_date.name())) {
+                                        Date eDate = formatDate(value, false);
+                                        if (eDate != null) {
+                                            event.setEventDate(eDate);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                if (event != null) {
+                    JSONObject eventJson = new JSONObject(JsonFormUtils.gson.toJson(event));
+                    db.addEvent(event.getBaseEntityId(), eventJson);
+
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, Log.getStackTraceString(e));
+            }
+
+            return null;
+        }
+    }
+
+
+    /**
+     * Starts an instance of JsonFormActivity with the provided form details
+     *
+     * @param context                       The activity form is being launched from
+     * @param openSrpContext                Current OpenSRP context
+     * @param jsonFormActivityRequestCode   The request code to be used to launch {@link JsonFormActivity}
+     * @param formName                      The name of the form to launch
+     * @param entityId                      The unique entity id for the form (e.g child's ZEIR id)
+     * @param metaData                      The form's meta data
+     * @param currentLocationId             OpenMRS id for the current device's location
+     * @throws Exception
+     */
+    public static void startForm(Activity context, org.ei.opensrp.Context openSrpContext,
+                                 int jsonFormActivityRequestCode,
+                                 String formName, String entityId, String metaData,
+                                 String currentLocationId) throws Exception {
+        Intent intent = new Intent(context, JsonFormActivity.class);
+
+        JSONObject form = FormUtils.getInstance(context).getFormJson(formName);
+        if (form != null) {
+            form.getJSONObject("metadata").put("encounter_location", currentLocationId);
+
+            if (formName.equals("child_enrollment")) {
+                if (StringUtils.isBlank(entityId)) {
+                    UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
+                    entityId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
+                    if (entityId.isEmpty()) {
+                        Toast.makeText(context, context.getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+
+                if (StringUtils.isNotBlank(entityId)) {
+                    entityId = entityId.replace("-", "");
+                }
+
+                JsonFormUtils.addChildRegLocHierarchyQuestions(form, openSrpContext);
+
+                // Inject zeir id into the form
+                JSONObject stepOne = form.getJSONObject(JsonFormUtils.STEP1);
+                JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    if (jsonObject.getString(JsonFormUtils.KEY)
+                            .equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
+                        jsonObject.remove(JsonFormUtils.VALUE);
+                        jsonObject.put(JsonFormUtils.VALUE, entityId);
+                        continue;
+                    }
+                }
+            } else if (formName.equals("out_of_catchment_service")) {
+                if (StringUtils.isNotBlank(entityId)) {
+                    entityId = entityId.replace("-", "");
+                } else {
+                    JSONArray fields = form.getJSONObject("step1").getJSONArray("fields");
+                    for (int i = 0; i < fields.length(); i++) {
+                        if(fields.getJSONObject(i).getString("key").equals("ZEIR_ID")) {
+                            fields.getJSONObject(i).put(READ_ONLY, false);
+                            break;
+                        }
+                    }
+                }
+
+                JSONObject stepOne = form.getJSONObject(JsonFormUtils.STEP1);
+                JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    if (jsonObject.getString(JsonFormUtils.KEY)
+                            .equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
+                        jsonObject.remove(JsonFormUtils.VALUE);
+                        jsonObject.put(JsonFormUtils.VALUE, entityId);
+                        continue;
+                    }
+                }
+
+                JsonFormUtils.addAddAvailableVaccines(context, form);
+            } else {
+                Log.w(TAG, "Unsupported form requested for launch "+formName);
+            }
+
+            intent.putExtra("json", form.toString());
+            Log.d(TAG, "form is " + form.toString());
+            context.startActivityForResult(intent, jsonFormActivityRequestCode);
+        }
+    }
+
+    public static Event addMetaData(Context context,Event event,Date start) throws JSONException {
+        Map<String,String> metaFields= new HashMap<String,String>();
+        metaFields.put("deviceid","163149AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        metaFields.put("end","163138AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        metaFields.put("start","163137AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        Calendar calendar = Calendar.getInstance();
+
+        String end = DATE_TIME_FORMAT.format(calendar.getTime());
+
+        Obs obs= new Obs();
+        obs.setFieldCode("163137AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        obs.setValue(DATE_TIME_FORMAT.format(start));
+        obs.setFieldType("concept");
+        obs.setFieldDataType("start");
+        event.addObs(obs);
+
+
+        obs.setFieldCode("163137AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        obs.setValue(end);
+        obs.setFieldDataType("end");
+        event.addObs(obs);
+
+        TelephonyManager mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+
+        String deviceId = mTelephonyManager.getSimSerialNumber();
+
+        obs.setFieldCode("163137AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        obs.setValue(deviceId);
+        obs.setFieldDataType("deviceid");
+        event.addObs(obs);
+        return event;
+    }
+
+    /**
+     * This method sorts the options provided for a native form tree view question
+     *
+     * @return The sorted options
+     */
+    private static JSONArray sortTreeViewQuestionOptions(JSONArray treeViewOptions) throws JSONException {
+        JSONArray sortedTree = new JSONArray();
+
+        HashMap<String, JSONObject> sortMap = new HashMap<>();
+        for (int i = 0; i < treeViewOptions.length(); i++) {
+            sortMap.put(treeViewOptions.getJSONObject(i).getString("name"), treeViewOptions.getJSONObject(i));
+        }
+
+        ArrayList<String> sortedKeys = new ArrayList<>(sortMap.keySet());
+        Collections.sort(sortedKeys);
+
+        for (String curOptionName : sortedKeys) {
+            JSONObject curOption = sortMap.get(curOptionName);
+            if (curOption.has("nodes")) {
+                curOption.put("nodes", sortTreeViewQuestionOptions(curOption.getJSONArray("nodes")));
+            }
+
+            sortedTree.put(curOption);
+        }
+
+        return sortedTree;
     }
 }

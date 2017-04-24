@@ -1,11 +1,13 @@
 package com.vijay.jsonwizard.widgets;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.support.v4.util.TimeUtils;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -24,6 +26,7 @@ import com.vijay.jsonwizard.interfaces.FormWidgetFactory;
 import com.vijay.jsonwizard.interfaces.JsonApi;
 import com.vijay.jsonwizard.validators.edittext.RequiredValidator;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.ParseException;
@@ -42,10 +45,10 @@ import static android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS;
  * @since 25/01/2017
  */
 public class DatePickerFactory implements FormWidgetFactory {
-
+    private static final String TAG = "DatePickerFactory";
     private static final long DAY_MILLSECONDS = 86400000;
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy");
-    public static final String DATE_FORMAT_REGEX = "(^(((0[1-9]|1[0-9]|2[0-8])[-](0[1-9]|1[012]))|((29|30|31)[-](0[13578]|1[02]))|((29|30)[-](0[4,6,9]|11)))[-](19|[2-9][0-9])\\d\\d$)|(^29[-]02[-](19|[2-9][0-9])(00|04|08|12|16|20|24|28|32|36|40|44|48|52|56|60|64|68|72|76|80|84|88|92|96)$)";
+    public static final String DATE_FORMAT_REGEX = "(^(((0[1-9]|1[0-9]|2[0-8])[-](0[1-9]|1[012]))|((29|30|31)[-](0[13578]|1[02]))|((29|30)[-](0[4,6,9]|11)))[-](19|[2-9][0-9])\\d\\d$)|(^29[-]02[-](19|[2-9][0-9])(00|04|08|12|16|20|24|28|32|36|40|44|48|52|56|60|64|68|72|76|80|84|88|92|96)$)|\\s*";
 
     @Override
     public List<View> getViewsFromJson(String stepName, final Context context, JsonFormFragment formFragment, JSONObject jsonObject,
@@ -78,6 +81,7 @@ public class DatePickerFactory implements FormWidgetFactory {
             editText.setTag(R.id.openmrs_entity_parent, openMrsEntityParent);
             editText.setTag(R.id.openmrs_entity, openMrsEntity);
             editText.setTag(R.id.openmrs_entity_id, openMrsEntityId);
+            editText.setTag(R.id.address, stepName + ":" + jsonObject.getString("key"));
             if (jsonObject.has("v_required")) {
                 JSONObject requiredObject = jsonObject.optJSONObject("v_required");
                 String requiredValue = requiredObject.getString("value");
@@ -90,13 +94,15 @@ public class DatePickerFactory implements FormWidgetFactory {
 
             if (!TextUtils.isEmpty(jsonObject.optString("value"))) {
                 updateDateText(editText, duration, jsonObject.optString("value"));
-                if (jsonObject.has("read_only")) {
-                    boolean readOnly = jsonObject.getBoolean("read_only");
-                    editText.setEnabled(!readOnly);
-                }
             } else if (jsonObject.has("default")) {
                 updateDateText(editText, duration,
                         DATE_FORMAT.format(getDate(jsonObject.getString("default")).getTime()));
+            }
+
+            if (jsonObject.has("read_only")) {
+                boolean readOnly = jsonObject.getBoolean("read_only");
+                editText.setEnabled(!readOnly);
+                editText.setFocusable(!readOnly);
             }
 
             editText.addValidator(new RegexpValidator(
@@ -104,8 +110,10 @@ public class DatePickerFactory implements FormWidgetFactory {
                     DATE_FORMAT_REGEX));
 
             Calendar date = getDate(editText.getText().toString());
-            final android.app.DatePickerDialog datePickerDialog = new android.app.DatePickerDialog
-                    (context, new android.app.DatePickerDialog.OnDateSetListener() {
+            final android.app.DatePickerDialog datePickerDialog = new android.app.DatePickerDialog(
+                    context,
+                    AlertDialog.THEME_HOLO_LIGHT,
+                    new android.app.DatePickerDialog.OnDateSetListener() {
                         @Override
                         public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                             Calendar calendarDate = Calendar.getInstance();
@@ -121,8 +129,10 @@ public class DatePickerFactory implements FormWidgetFactory {
                                 updateDateText(editText, duration, "");
                             }
                         }
-                    }, date.get(Calendar.YEAR), date.get(Calendar.MONTH), date.get
-                            (Calendar.DAY_OF_MONTH));
+                    },
+                    date.get(Calendar.YEAR),
+                    date.get(Calendar.MONTH),
+                    date.get(Calendar.DAY_OF_MONTH));
 
             datePickerDialog.setOnShowListener(new DialogInterface.OnShowListener() {
                 @Override
@@ -185,18 +195,20 @@ public class DatePickerFactory implements FormWidgetFactory {
             });
             editText.addTextChangedListener(genericTextWatcher);
 
+            JSONArray canvasIds = new JSONArray();
+            dateViewRelativeLayout.setId(ViewUtil.generateViewId());
+            canvasIds.put(dateViewRelativeLayout.getId());
+            editText.setTag(R.id.canvas_ids, canvasIds.toString());
+
+            ((JsonApi) context).addFormDataView(editText);
             views.add(dateViewRelativeLayout);
             if (relevance != null && context instanceof JsonApi) {
                 editText.setTag(R.id.relevance, relevance);
                 ((JsonApi) context).addSkipLogicView(editText);
-
-                duration.setTag(R.id.relevance, relevance);
-                ((JsonApi) context).addSkipLogicView(duration);
             }
 
             if (constraints != null && context instanceof JsonApi) {
                 editText.setTag(R.id.constraints, constraints);
-                editText.setTag(R.id.address, stepName + ":" + jsonObject.getString("key"));
                 ((JsonApi) context).addConstrainedView(editText);
             }
         } catch (Exception e) {
@@ -333,15 +345,22 @@ public class DatePickerFactory implements FormWidgetFactory {
         if (dayString != null && dayString.trim().length() > 0) {
             dayString = dayString.trim().toLowerCase();
             if (!dayString.equals("today")) {
-                Pattern pattern = Pattern.compile("today\\s*([-\\+])\\s*(\\d+)");
+                Pattern pattern = Pattern.compile("today\\s*([-\\+])\\s*(\\d+)([dmyDMY]{1})");
                 Matcher matcher = pattern.matcher(dayString);
                 if (matcher.find()) {
-                    int noDays = Integer.parseInt(matcher.group(2));
+                    int timeValue = Integer.parseInt(matcher.group(2));
                     if (matcher.group(1).equals("-")) {
-                        noDays = noDays * -1;
+                        timeValue = timeValue * -1;
                     }
 
-                    calendarDate.add(Calendar.DATE, noDays);
+                    int field = Calendar.DATE;
+                    if (matcher.group(3).toLowerCase().equals("y")) {
+                        field = Calendar.YEAR;
+                    } else if (matcher.group(3).toLowerCase().equals("m")) {
+                        field = Calendar.MONTH;
+                    }
+
+                    calendarDate.add(field, timeValue);
                 } else {
                     try {
                         calendarDate.setTime(DATE_FORMAT.parse(dayString));

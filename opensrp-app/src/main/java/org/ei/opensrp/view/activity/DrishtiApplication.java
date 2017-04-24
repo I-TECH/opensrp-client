@@ -3,15 +3,19 @@ package org.ei.opensrp.view.activity;
 import android.app.Application;
 import android.os.Build;
 import android.support.multidex.MultiDex;
-import android.util.Log;
+
+import net.sqlcipher.database.SQLiteDatabase;
 
 import org.ei.opensrp.AllConstants;
 import org.ei.opensrp.Context;
 import org.ei.opensrp.R;
+import org.ei.opensrp.repository.DrishtiRepository;
+import org.ei.opensrp.repository.Repository;
 import org.ei.opensrp.util.BitmapImageCache;
 import org.ei.opensrp.util.OpenSRPImageLoader;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Locale;
 
 
@@ -21,14 +25,18 @@ public abstract class DrishtiApplication extends Application {
     protected Locale locale = null;
     protected Context context;
     private static BitmapImageCache memoryImageCache;
-    private static DrishtiApplication mInstance;
+    protected static DrishtiApplication mInstance;
     private static OpenSRPImageLoader cachedImageLoader;
+    private String password;
 
     @Override
     public void onCreate() {
         super.onCreate();
         mInstance=this;
+        context = Context.getInstance();
+        SQLiteDatabase.loadLibs(this);
     }
+
     public static synchronized DrishtiApplication getInstance() {
         return mInstance;
     }
@@ -40,6 +48,16 @@ public abstract class DrishtiApplication extends Application {
     protected void attachBaseContext(android.content.Context base) {
         super.attachBaseContext(base);
         MultiDex.install(this);
+    }
+    protected Repository repository;
+
+    public  Repository getRepository() {
+        ArrayList<DrishtiRepository> drishtireposotorylist = Context.getInstance().sharedRepositories();
+        DrishtiRepository[] drishtireposotoryarray = drishtireposotorylist.toArray(new DrishtiRepository[drishtireposotorylist.size()]);
+        if(repository==null) {
+            repository = new Repository(getInstance().getApplicationContext(), null, drishtireposotoryarray);
+        }
+        return repository;
     }
 
 
@@ -62,5 +80,18 @@ public abstract class DrishtiApplication extends Application {
         }
 
         return cachedImageLoader;
+    }
+
+
+    public void setPassword(String password){
+        this.password=password;
+    }
+
+    public String getPassword(){
+        if(password==null) {
+            String username=context.userService().getAllSharedPreferences().fetchRegisteredANM();
+            password=context.userService().getGroupId(username);
+        }
+        return password;
     }
 }

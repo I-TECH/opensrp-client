@@ -13,7 +13,6 @@ import net.sqlcipher.database.SQLiteDatabase;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ei.opensrp.repository.DrishtiRepository;
-import org.ei.opensrp.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -443,22 +442,29 @@ public class CommonRepository extends DrishtiRepository {
         }
     }
     public  ArrayList<HashMap<String, String>> rawQuery(String sql){
-        SQLiteDatabase database = masterRepository.getReadableDatabase();
-        Cursor cursor = database.rawQuery(sql, null);
         ArrayList<HashMap<String, String>> maplist = new ArrayList<HashMap<String, String>>();
-        // looping through all rows and adding to list
-        if (cursor.moveToFirst()) {
-            do {
-                HashMap<String, String> map = new HashMap<String, String>();
-                for(int i=0; i<cursor.getColumnCount();i++)
-                {
-                    map.put(cursor.getColumnName(i), cursor.getString(i));
-                }
+        Cursor cursor = null;
+        try {
+            SQLiteDatabase database = masterRepository.getReadableDatabase();
+            cursor = database.rawQuery(sql, null);
+            if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
+                // looping through all rows and adding to list
+                do {
+                    HashMap<String, String> map = new HashMap<String, String>();
+                    for (int i = 0; i < cursor.getColumnCount(); i++) {
+                        map.put(cursor.getColumnName(i), cursor.getString(i));
+                    }
 
-                maplist.add(map);
-            } while (cursor.moveToNext());
+                    maplist.add(map);
+                } while (cursor.moveToNext());
+            }
+        }catch (Exception e){
+
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
         }
-        cursor.close();
         // return contact list
         return maplist;
     }

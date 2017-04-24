@@ -15,6 +15,8 @@ import org.ei.opensrp.path.R;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import util.JsonFormUtils;
+
 /**
  * @author Jason Rogena - jrogena@ona.io
  * @since 03/03/2017
@@ -59,7 +61,7 @@ public class ServiceLocationsAdapter extends BaseAdapter {
             view.setId(position + 2321);
 
             TextView text1 = (TextView) view.findViewById(android.R.id.text1);
-            text1.setText(locationNames.get(position));
+            text1.setText(JsonFormUtils.getOpenMrsReadableName(locationNames.get(position)));
             views.put(locationNames.get(position), view);
         }
 

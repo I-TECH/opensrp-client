@@ -30,15 +30,19 @@ public class ImageRepository extends DrishtiRepository {
     public static String TYPE_Unsynced = "Unsynced";
     public static String TYPE_Synced = "Synced";
 
+    private static final String ENTITY_ID_INDEX = "CREATE INDEX " + Image_TABLE_NAME + "_" + entityID_COLUMN + "_index ON " + Image_TABLE_NAME + "(" + entityID_COLUMN + " COLLATE NOCASE);";
+
+
     @Override
     protected void onCreate(SQLiteDatabase database) {
         database.execSQL(Image_SQL);
+        database.execSQL(ENTITY_ID_INDEX);
     }
 
     public void add(ProfileImage Image) {
         SQLiteDatabase database = masterRepository.getWritableDatabase();
         database.insert(Image_TABLE_NAME, null, createValuesFor(Image, TYPE_ANC));
-        database.close();
+        //database.close();
     }
 
     public List<ProfileImage> allProfileImages() {
@@ -94,7 +98,9 @@ public class ImageRepository extends DrishtiRepository {
         } catch (Exception e) {
             Log.e(TAG,e.getMessage());
         } finally {
-            cursor.close();
+            if(cursor != null) {
+                cursor.close();
+            }
         }
         return profileImages;
     }

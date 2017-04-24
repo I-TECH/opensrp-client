@@ -63,6 +63,13 @@
           }
         },
         {
+          "column_name":"nrc_number",
+          "type":"Client",
+          "json_mapping":{
+            "field":"attributes.NRC_Number"
+          }
+        },
+        {
           "column_name":"provider_uc",
           "type":"Client",
           "json_mapping":{
@@ -177,6 +184,20 @@
           "type":"Client",
           "json_mapping":{
             "field":"identifiers.ZEIR_ID"
+          }
+        },
+        {
+          "column_name":"inactive",
+          "type":"Client",
+          "json_mapping":{
+            "field":"attributes.inactive"
+          }
+        },
+        {
+          "column_name":"lost_to_follow_up",
+          "type":"Client",
+          "json_mapping":{
+            "field":"attributes.lost_to_follow_up"
           }
         },
         {

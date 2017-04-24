@@ -20,10 +20,10 @@ public class MinNumericValidator extends METValidator {
     public boolean isValid(@NonNull CharSequence text, boolean isEmpty) {
         if (!isEmpty) {
             try {
-                if (Double.parseDouble(text.toString()) >= minValue) return true;
+                if (Double.parseDouble(text.toString()) < minValue) return false;
             } catch (Exception e) {
             }
         }
-        return false;
+        return true;
     }
 }

@@ -6,11 +6,6 @@ import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.util.Log;
 
-import org.ei.opensrp.Context;
-import org.ei.opensrp.sync.CloudantSyncHandler;
-
-import java.util.concurrent.CountDownLatch;
-
 import static org.ei.opensrp.util.Log.logInfo;
 
 
@@ -45,12 +40,12 @@ public class PathReplicationIntentService extends IntentService {
 
         try {
 
-            CloudantSyncHandler mCloudantSyncHandler = CloudantSyncHandler.getInstance(Context.getInstance().applicationContext());
-            CountDownLatch mCountDownLatch = new CountDownLatch(1);
-            mCloudantSyncHandler.setCountDownLatch(mCountDownLatch);
-            mCloudantSyncHandler.startPushReplication();
-
-            mCountDownLatch.await();
+//            CloudantSyncHandler mCloudantSyncHandler = CloudantSyncHandler.getInstance(Context.getInstance().applicationContext());
+//            CountDownLatch mCountDownLatch = new CountDownLatch(1);
+//            mCloudantSyncHandler.setCountDownLatch(mCountDownLatch);
+//            mCloudantSyncHandler.startPushReplication();
+//
+//            mCountDownLatch.await();
 
             status = true;
 

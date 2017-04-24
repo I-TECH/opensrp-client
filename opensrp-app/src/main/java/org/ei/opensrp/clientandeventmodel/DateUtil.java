@@ -17,7 +17,9 @@ public class DateUtil {
     private static DateUtility dateUtility = new RealDate();
     public static DateFormat yyyyMMdd = new SimpleDateFormat("yyyy-MM-dd");
     public static DateFormat yyyyMMddHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    public static DateFormat yyyyMMddTHHmmssSSSZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    public static DateFormat yyyyMMddTHHmmssSSSZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    //2017-03-01T14:04:20.865Z
+
 
     public static void fakeIt(LocalDate fakeDayAsToday) {
         dateUtility = new MockDate(fakeDayAsToday);

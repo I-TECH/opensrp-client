@@ -113,10 +113,8 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
     }
 
     public ValidationStatus writeValuesAndValidate(LinearLayout mainView) {
-        int childCount = mainView.getChildCount();
         ValidationStatus firstError = null;
-        for (int i = 0; i < childCount; i++) {
-            View childAt = mainView.getChildAt(i);
+        for (View childAt : formFragment.getJsonApi().getFormDataViews()) {
             String key = (String) childAt.getTag(R.id.key);
             String openMrsEntityParent = (String) childAt.getTag(R.id.openmrs_entity_parent);
             String openMrsEntity = (String) childAt.getTag(R.id.openmrs_entity);
@@ -129,7 +127,13 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
 
             if (childAt instanceof MaterialEditText) {
                 MaterialEditText editText = (MaterialEditText) childAt;
-                getView().writeValue(mStepName, key, editText.getText().toString(),
+
+                String rawValue = (String) editText.getTag(R.id.raw_value);
+                if (rawValue == null) {
+                    rawValue = editText.getText().toString();
+                }
+
+                getView().writeValue(mStepName, key, rawValue,
                         openMrsEntityParent, openMrsEntity, openMrsEntityId);
             } else if (childAt instanceof ImageView) {
                 Object path = childAt.getTag(R.id.imagePath);
@@ -271,6 +275,7 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
     }
 
     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+        Log.d(TAG, "onCheckedChanged called");
         if (compoundButton instanceof CheckBox) {
             String parentKey = (String) compoundButton.getTag(R.id.key);
             String openMrsEntityParent = (String) compoundButton.getTag(R.id.openmrs_entity_parent);

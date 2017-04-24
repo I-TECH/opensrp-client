@@ -5,7 +5,7 @@ public class ColumnAttribute {
 		text, bool, date, list, map, longnum
 	}
 
-	ColumnAttribute(Type type, boolean pk, boolean index) {
+	public ColumnAttribute(Type type, boolean pk, boolean index) {
 		this.type = type;
 		this.pk = pk;
 		this.index = index;

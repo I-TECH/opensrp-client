@@ -9,6 +9,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -163,7 +164,7 @@ public abstract class BaseRegisterActivity extends SecuredNativeSmartRegisterAct
         if (id == R.id.nav_register) {
             startFormActivity("child_enrollment", null, null);
         } else if (id == R.id.nav_record_vaccination_out_catchment) {
-
+            startFormActivity("out_of_catchment_service", null, null);
         }/* else if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
@@ -246,6 +247,8 @@ public abstract class BaseRegisterActivity extends SecuredNativeSmartRegisterAct
             super.onDrawerClosed(drawerView);
         }
     }
+
+
 
 }
 

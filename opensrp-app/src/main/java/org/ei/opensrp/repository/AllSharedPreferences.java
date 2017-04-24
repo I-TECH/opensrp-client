@@ -4,7 +4,6 @@ import android.content.SharedPreferences;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Set;
 
 import static org.ei.opensrp.AllConstants.CURRENT_LOCALITY;
 import static org.ei.opensrp.AllConstants.DEFAULT_LOCALE;
@@ -23,6 +22,7 @@ public class AllSharedPreferences {
     private static final String HOST = "HOST";
     private static final String PORT = "PORT";
     private static final String LAST_SYNC_DATE = "LAST_SYNC_DATE";
+    private static final String LAST_UPDATED_AT_DATE = "LAST_UPDATED_AT_DATE";
     private SharedPreferences preferences;
 
     public AllSharedPreferences(SharedPreferences preferences) {
@@ -110,7 +110,7 @@ public class AllSharedPreferences {
 
     public String fetchBaseURL(String baseurl){
 
-      return   preferences.getString(DRISHTI_BASE_URL,baseurl);
+      return   preferences.getString(DRISHTI_BASE_URL, baseurl);
     }
 
     public String fetchHost(String host){
@@ -126,7 +126,7 @@ public class AllSharedPreferences {
 
     public Integer fetchPort(Integer port){
 
-        return  Integer.parseInt( preferences.getString(PORT,""+port));
+        return  Integer.parseInt(preferences.getString(PORT, "" + port));
     }
 
     public Long fetchLastSyncDate(long lastSyncDate){
@@ -137,7 +137,14 @@ public class AllSharedPreferences {
     public void saveLastSyncDate(long lastSyncDate){
         preferences.edit().putLong(LAST_SYNC_DATE, lastSyncDate).commit();
     }
+    public Long fetchLastUpdatedAtDate(long lastSyncDate){
 
+        return  preferences.getLong(LAST_UPDATED_AT_DATE, lastSyncDate);
+    }
+
+    public void saveLastUpdatedAtDate(long lastSyncDate){
+        preferences.edit().putLong(LAST_UPDATED_AT_DATE, lastSyncDate).commit();
+    }
     public void savePort(Integer port){
         preferences.edit().putString(PORT, String.valueOf(port)).commit();
     }

@@ -19,9 +19,5 @@
                  android:id="@+id/container"
                  android:layout_below="@+id/tb_top"
                  android:layout_width="match_parent"
-                 android:layout_height="match_parent"
-                 android:paddingTop="10dp"
-                 android:paddingBottom="10dp"
-                 android:paddingLeft="15dp"
-                 android:paddingRight="15dp" />
+                 android:layout_height="match_parent" />
 </RelativeLayout>

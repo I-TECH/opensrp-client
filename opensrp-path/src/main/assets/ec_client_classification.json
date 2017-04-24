@@ -18,6 +18,13 @@
             "creates_case": [
               "ec_child"
             ]
+          },
+          {
+            "field": "eventType",
+            "field_value": "Update Birth Registration",
+            "creates_case": [
+              "ec_child"
+            ]
           }
         ]
       }

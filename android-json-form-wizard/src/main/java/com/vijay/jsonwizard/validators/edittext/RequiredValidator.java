@@ -1,5 +1,7 @@
 package com.vijay.jsonwizard.validators.edittext;
 
+import android.util.Log;
+
 import com.rengwuxian.materialedittext.validation.METValidator;
 
 /**
@@ -13,6 +15,10 @@ public class RequiredValidator extends METValidator {
 
     @Override
     public boolean isValid(CharSequence charSequence, boolean isEmpty) {
+        if(errorMessage.equals("Enter the date that the child was first seen at a health facility for immunization services")) {
+            Log.d("RequiredValidation", "Charsequence is " + charSequence.toString());
+            Log.d("RequiredValidation", "isEmpty is " + isEmpty);
+        }
         return !isEmpty;
     }
 }

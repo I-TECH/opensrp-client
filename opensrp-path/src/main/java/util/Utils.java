@@ -16,16 +16,19 @@
 
 package util;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.text.Html;
 import android.text.InputType;
 import android.text.Spanned;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -44,7 +47,7 @@ import com.squareup.picasso.Picasso;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
-import org.ei.drishti.dto.AlertStatus;
+import org.ei.opensrp.domain.AlertStatus;
 import org.ei.opensrp.commonregistry.CommonPersonObjectClient;
 import org.ei.opensrp.domain.ProfileImage;
 import org.ei.opensrp.path.domain.EditWrapper;
@@ -55,6 +58,8 @@ import org.opensrp.api.domain.Location;
 import org.opensrp.api.util.TreeNode;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -70,6 +75,7 @@ import java.util.Map;
  *         Class containing some static utility methods.
  */
 public class Utils {
+    private static final String TAG = "Utils";
     private static final SimpleDateFormat UI_DF = new SimpleDateFormat("dd-MM-yyyy");
     private static final SimpleDateFormat UI_DTF = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
@@ -403,7 +409,7 @@ public class Utils {
                     JsonObject je = e.getAsJsonObject();
                     return new DateTime(je.get("iMillis").getAsLong());
                 } else if (e.isJsonPrimitive()) {
-                    return new DateTime(e.getAsLong());
+                    return new DateTime(e.getAsString());
                 } else return null;
             }
 
@@ -493,6 +499,36 @@ public class Utils {
         }
 
         return "";
+    }
+
+    public static String readAssetContents(Context context, String path) {
+        String fileContents = null;
+        try {
+            InputStream is = context.getAssets().open(path);
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            fileContents = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            Log.e(TAG, Log.getStackTraceString(ex));
+        }
+
+        return fileContents;
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static <T> void startAsyncTask(AsyncTask<T, ?, ?> asyncTask, T[] params) {
+        if (params == null) {
+            @SuppressWarnings("unchecked")
+            T[] arr = (T[]) new Void[0];
+            params = arr;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, params);
+        } else {
+            asyncTask.execute(params);
+        }
     }
 
 }

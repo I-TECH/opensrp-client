@@ -1,14 +1,18 @@
 package org.ei.opensrp.domain;
 
-import java.io.Serializable;
+import org.ei.opensrp.clientandeventmodel.Event;
+
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by keyman on 3/1/17.
  */
 public class Weight {
+    private static final String ZEIR_ID = "ZEIR_ID";
     Long id;
     String baseEntityId;
+    String programClientId;
     Float kg;
     Date date;
     String anmId;
@@ -22,6 +26,19 @@ public class Weight {
     public Weight(Long id, String baseEntityId, Float kg, Date date, String anmId, String locationId, String syncStatus, Long updatedAt) {
         this.id = id;
         this.baseEntityId = baseEntityId;
+        this.programClientId = null;
+        this.kg = kg;
+        this.date = date;
+        this.anmId = anmId;
+        this.locationId = locationId;
+        this.syncStatus = syncStatus;
+        this.updatedAt = updatedAt;
+    }
+
+    public Weight(Long id, String baseEntityId, String programClientId, Float kg, Date date, String anmId, String locationId, String syncStatus, Long updatedAt) {
+        this.id = id;
+        this.baseEntityId = baseEntityId;
+        this.programClientId = programClientId;
         this.kg = kg;
         this.date = date;
         this.anmId = anmId;
@@ -44,6 +61,20 @@ public class Weight {
 
     public void setBaseEntityId(String baseEntityId) {
         this.baseEntityId = baseEntityId;
+    }
+
+    public String getProgramClientId() {
+        return programClientId;
+    }
+
+    public void setProgramClientId(String programClientId) {
+        this.programClientId = programClientId;
+    }
+
+    public HashMap<String, String> getIdentifiers() {
+        HashMap<String, String> identifiers = new HashMap<>();
+        identifiers.put(ZEIR_ID, programClientId);
+        return identifiers;
     }
 
     public Float getKg() {

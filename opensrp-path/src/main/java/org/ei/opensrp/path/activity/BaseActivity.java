@@ -1,10 +1,13 @@
 package org.ei.opensrp.path.activity;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
@@ -22,41 +25,36 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.vijay.jsonwizard.activities.JsonFormActivity;
-
+import org.apache.commons.lang3.StringUtils;
 import org.ei.opensrp.Context;
 import org.ei.opensrp.domain.FetchStatus;
 import org.ei.opensrp.path.R;
+import org.ei.opensrp.path.application.VaccinatorApplication;
+import org.ei.opensrp.path.repository.UniqueIdRepository;
 import org.ei.opensrp.path.sync.ECSyncUpdater;
 import org.ei.opensrp.path.sync.PathAfterFetchListener;
 import org.ei.opensrp.path.sync.PathUpdateActionsTask;
 import org.ei.opensrp.path.toolbar.BaseToolbar;
 import org.ei.opensrp.path.toolbar.LocationSwitcherToolbar;
 import org.ei.opensrp.repository.AllSharedPreferences;
-import org.ei.opensrp.repository.UniqueIdRepository;
-import org.ei.opensrp.sync.AfterFetchListener;
 import org.ei.opensrp.sync.SyncProgressIndicator;
-import org.ei.opensrp.util.FormUtils;
 import org.ei.opensrp.view.activity.DrishtiApplication;
-import org.ei.opensrp.view.activity.SettingsActivity;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
 import org.joda.time.Minutes;
 import org.joda.time.Seconds;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.opensrp.api.constants.Gender;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 import util.JsonFormUtils;
 
@@ -182,7 +180,7 @@ public abstract class BaseActivity extends AppCompatActivity
         }
     }
 
-    private void initViews() {
+    public void initViews() {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         Button logoutButton = (Button) navigationView.findViewById(R.id.logout_b);
         logoutButton.setOnClickListener(new View.OnClickListener() {
@@ -232,9 +230,9 @@ public abstract class BaseActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_register) {
-            startChildRegistration();
+            startJsonForm("child_enrollment", null);
         } else if (id == R.id.nav_record_vaccination_out_catchment) {
-
+            startJsonForm("out_of_catchment_service", null);
         }/* else if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
@@ -285,39 +283,122 @@ public abstract class BaseActivity extends AppCompatActivity
         return new int[]{darkShade, normalShade, lightSade};
     }
 
-    protected void startChildRegistration() {
+    protected void startJsonForm(String formName, String entityId) {
         try {
-            UniqueIdRepository uniqueIdRepo = org.ei.opensrp.Context.getInstance().uniqueIdRepository();
-            String entityId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
-            if (entityId.isEmpty()) {
-                Toast.makeText(this, getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            JSONObject form = FormUtils.getInstance(getApplicationContext()).getFormJson("child_enrollment");
             if (toolbar instanceof LocationSwitcherToolbar) {
                 LocationSwitcherToolbar locationSwitcherToolbar = (LocationSwitcherToolbar) toolbar;
-                JsonFormUtils.addChildRegLocHierarchyQuestions(form,
-                        locationSwitcherToolbar.getCurrentLocation(), getOpenSRPContext());
-                if (form != null) {
-                    Intent intent = new Intent(getApplicationContext(), JsonFormActivity.class);
-                    //inject zeir id into the form
-                    JSONObject stepOne = form.getJSONObject(JsonFormUtils.STEP1);
-                    JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
-                            jsonObject.remove(JsonFormUtils.VALUE);
-                            jsonObject.put(JsonFormUtils.VALUE, entityId);
-                            continue;
-                        }
-                    }
-                    intent.putExtra("json", form.toString());
-                    startActivityForResult(intent, REQUEST_CODE_GET_JSON);
-                }
+                String locationId = JsonFormUtils.getOpenMrsLocationId(getOpenSRPContext(),
+                        locationSwitcherToolbar.getCurrentLocation());
+
+                JsonFormUtils.startForm(this, getOpenSRPContext(), REQUEST_CODE_GET_JSON,
+                        formName, entityId, null, locationId);
             }
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
+        }
+    }
+
+    protected void showNotification(int message, int notificationIcon, int positiveButtonText,
+                                    View.OnClickListener positiveButtonClick,
+                                    int negativeButtonText,
+                                    View.OnClickListener negativeButtonClick,
+                                    Object tag) {
+        String posBtnText = null;
+        if (positiveButtonText != 0 && positiveButtonClick != null) {
+            posBtnText = getString(positiveButtonText);
+        }
+
+        String negBtnText = null;
+        if (negativeButtonText != 0 && negativeButtonClick != null) {
+            negBtnText = getString(negativeButtonText);
+        }
+
+        showNotification(getString(message), getResources().getDrawable(notificationIcon),
+                posBtnText, positiveButtonClick,
+                negBtnText, negativeButtonClick, tag);
+    }
+
+    protected void showNotification(String message, Drawable notificationIcon, String positiveButtonText,
+                                    View.OnClickListener positiveButtonOnClick,
+                                    String negativeButtonText,
+                                    View.OnClickListener negativeButtonOnClick,
+                                    Object tag) {
+        TextView notiMessage = (TextView) findViewById(R.id.noti_message);
+        notiMessage.setText(message);
+        Button notiPositiveButton = (Button) findViewById(R.id.noti_positive_button);
+        notiPositiveButton.setTag(tag);
+        if (positiveButtonText != null) {
+            notiPositiveButton.setVisibility(View.VISIBLE);
+            notiPositiveButton.setText(positiveButtonText);
+            notiPositiveButton.setOnClickListener(positiveButtonOnClick);
+        } else {
+            notiPositiveButton.setVisibility(View.GONE);
+        }
+
+        Button notiNegativeButton = (Button) findViewById(R.id.noti_negative_button);
+        notiNegativeButton.setTag(tag);
+        if (negativeButtonText != null) {
+            notiNegativeButton.setVisibility(View.VISIBLE);
+            notiNegativeButton.setText(negativeButtonText);
+            notiNegativeButton.setOnClickListener(negativeButtonOnClick);
+        } else {
+            notiNegativeButton.setVisibility(View.GONE);
+        }
+
+        ImageView notiIcon = (ImageView) findViewById(R.id.noti_icon);
+        if (notificationIcon != null) {
+            notiIcon.setVisibility(View.VISIBLE);
+            notiIcon.setImageDrawable(notificationIcon);
+        } else {
+            notiIcon.setVisibility(View.GONE);
+        }
+
+        final LinearLayout notification = (LinearLayout) findViewById(R.id.notification);
+
+        if (notification.getVisibility() == View.GONE) {
+            Animation slideDownAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_down);
+            slideDownAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                    notification.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+            notification.clearAnimation();
+            notification.startAnimation(slideDownAnimation);
+        }
+    }
+
+    protected void hideNotification() {
+        final LinearLayout notification = (LinearLayout) findViewById(R.id.notification);
+        if (notification.getVisibility() == View.VISIBLE) {
+            Animation slideUpAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_up);
+            slideUpAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    notification.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+            notification.startAnimation(slideUpAnimation);
         }
     }
 
@@ -329,7 +410,7 @@ public abstract class BaseActivity extends AppCompatActivity
             SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
             AllSharedPreferences allSharedPreferences = new AllSharedPreferences(preferences);
 
-            JsonFormUtils.save(this, getOpenSRPContext(), jsonString, allSharedPreferences.fetchRegisteredANM(), "Child_Photo", "child", "mother");
+            JsonFormUtils.saveForm(this, getOpenSRPContext(), jsonString, allSharedPreferences.fetchRegisteredANM());
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -406,18 +487,31 @@ public abstract class BaseActivity extends AppCompatActivity
         progressDialog = new ProgressDialog(this);
         progressDialog.setCancelable(false);
         progressDialog.setTitle(getString(R.string.saving_dialog_title));
-        progressDialog.setMessage(getString(R.string.saving_dialog_message));
+        progressDialog.setMessage(getString(R.string.please_wait_message));
     }
 
-    protected  void showProgressDialog(){
-        if(progressDialog != null){
+    protected void showProgressDialog(String title, String message) {
+        if (progressDialog != null) {
+            if (StringUtils.isNotBlank(title)) {
+                progressDialog.setTitle(title);
+            }
+
+            if (StringUtils.isNotBlank(message)) {
+                progressDialog.setMessage(message);
+            }
+
             progressDialog.show();
         }
     }
 
-    protected  void hideProgressDialog(){
-        if(progressDialog != null){
+    protected void showProgressDialog() {
+        showProgressDialog(getString(R.string.saving_dialog_title), getString(R.string.please_wait_message));
+    }
+
+    protected void hideProgressDialog() {
+        if (progressDialog != null) {
             progressDialog.dismiss();
         }
     }
+
 }

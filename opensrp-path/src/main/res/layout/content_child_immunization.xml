@@ -31,7 +31,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:id="@+id/profile_name_layout">
 
                 <FrameLayout
                     android:layout_width="@dimen/immun_child_card_height"
@@ -147,7 +148,7 @@
                             android:background="@drawable/record_weight_bg"
                             android:paddingBottom="16dp"
                             android:paddingTop="16dp"
-                            android:gravity="center_vertical|center_horizontal"
+                            android:gravity="center"
                             android:orientation="horizontal">
 
                             <ImageView
@@ -162,10 +163,11 @@
                                 android:id="@+id/record_weight_text"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Record weight"
+                                android:text="@string/record_weight"
                                 android:textAllCaps="false"
                                 android:textAppearance="?android:attr/textAppearanceSmall"
                                 android:textColor="@color/text_black"
+                                android:gravity="center"
                                 android:textSize="19sp"/>
                         </LinearLayout>
 

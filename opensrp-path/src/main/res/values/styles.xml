@@ -55,6 +55,7 @@
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="AppThemeNoTitle.NoActionBar">
+        <item name="colorControlNormal">@color/white</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:actionMenuTextAppearance">@style/MenuTextAppearance</item>
@@ -89,6 +90,10 @@
         <item name="fontVariant">bold</item>
     </style>
 
+    <style name="CustomFontTextViewStyle.ClientList.NoPadding" parent="CustomFontTextViewStyle">
+        <item name="android:paddingLeft">0dp</item>
+    </style>
+
     <style name="CustomFontTextViewStyle.ClientList.Medium" parent="CustomFontTextViewStyle">
         <item name="fontVariant">medium</item>
     </style>
@@ -99,5 +104,26 @@
 
     <style name="CustomFontTextViewStyle.ClientList.Thin" parent="CustomFontTextViewStyle">
         <item name="fontVariant">thin</item>
+    </style>
+
+    <style name="CustomFontTextViewStyle.tabIndicator" parent="CustomFontTextViewStyle.ClientList.Bold">
+        <item name="fontVariant">medium</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/dark_grey</item>
+    </style>
+    <style name="AppThemeNoActionBarAndTitleWithEditButton" parent="AppThemeNoTitle.NoActionBar">
+        <item name="actionOverflowButtonStyle">@style/OverflowMenuButton</item>
+    </style>
+    <style name="OverflowMenuButton" parent="@android:style/Widget.Holo.Light.ActionButton.Overflow">
+        <item name="android:src">@drawable/ic_icon_edit</item>
+    </style>
+    <style name="Material.Drawable.CheckBox.Dialog" parent="Material.Drawable.CheckBox">
+        <item name="cbd_width">40dp</item>
+        <item name="cbd_height">40dp</item>
+        <item name="cbd_tickColor">@color/light_blue</item>
+        <item name="cbd_strokeColor">@color/vaccinate_popup_light_grey</item>
+        <item name="cbd_cornerRadius">0dp</item>
+        <item name="cbd_strokeSize">3.5dp</item>
+        <item name="cbd_boxSize">25dp</item>
     </style>
 </resources>

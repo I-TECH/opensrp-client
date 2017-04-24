@@ -15,25 +15,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+
+import com.vijay.jsonwizard.customviews.CheckBox;
+import com.vijay.jsonwizard.customviews.RadioButton;
+
 import org.apache.commons.lang3.StringUtils;
 import org.ei.opensrp.path.R;
-import org.ei.opensrp.path.activity.ChildDetailActivity;
-import org.ei.opensrp.path.activity.WomanDetailActivity;
 import org.ei.opensrp.path.db.VaccineRepo;
-import org.ei.opensrp.path.domain.VaccinateFormSubmissionWrapper;
 import org.ei.opensrp.path.domain.VaccineWrapper;
 import org.ei.opensrp.path.listener.VaccinationActionListener;
 import org.ei.opensrp.util.OpenSRPImageLoader;
 import org.ei.opensrp.view.activity.DrishtiApplication;
 import org.joda.time.DateTime;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
@@ -41,23 +43,21 @@ import util.ImageUtils;
 
 @SuppressLint("ValidFragment")
 public class VaccinationDialogFragment extends DialogFragment {
-    private final Context context;
-    private final List<VaccineWrapper> tags;
-    private final View viewGroup;
+    private List<VaccineWrapper> tags;
     private VaccinationActionListener listener;
     public static final String DIALOG_TAG = "VaccinationDialogFragment";
-
-    private VaccinationDialogFragment(Context context,
-                                      List<VaccineWrapper> tags, View viewGroup) {
-        this.context = context;
-        this.tags = tags;
-        this.viewGroup = viewGroup;
-    }
+    public static final String WRAPPER_TAG = "tag";
 
     public static VaccinationDialogFragment newInstance(
-            Context context,
-            List<VaccineWrapper> tags, View viewGroup) {
-        return new VaccinationDialogFragment(context, tags, viewGroup);
+            ArrayList<VaccineWrapper> tags) {
+
+        VaccinationDialogFragment vaccinationDialogFragment = new VaccinationDialogFragment();
+
+        Bundle args = new Bundle();
+        args.putSerializable(WRAPPER_TAG, tags);
+        vaccinationDialogFragment.setArguments(args);
+
+        return vaccinationDialogFragment;
     }
 
     @Override
@@ -69,6 +69,12 @@ public class VaccinationDialogFragment extends DialogFragment {
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Bundle bundle = getArguments();
+        Serializable serializable = bundle.getSerializable(WRAPPER_TAG);
+        if (serializable != null && serializable instanceof ArrayList) {
+            tags = (ArrayList<VaccineWrapper>) serializable;
+        }
 
         if (tags == null || tags.isEmpty()) {
             return null;
@@ -83,20 +89,64 @@ public class VaccinationDialogFragment extends DialogFragment {
         final LinearLayout vaccinationNameLayout = (LinearLayout) dialogView.findViewById(R.id.vaccination_name_layout);
 
         if (tags.size() == 1) {
-            View vaccinationName = inflater.inflate(R.layout.vaccination_name, null);
-            TextView vaccineView = (TextView) vaccinationName.findViewById(R.id.vaccine);
 
+            String vName = "";
             VaccineWrapper vaccineWrapper = tags.get(0);
             VaccineRepo.Vaccine vaccine = vaccineWrapper.getVaccine();
             if (vaccine != null) {
-                vaccineView.setText(vaccine.display());
+                vName = vaccine.display();
             } else {
-                vaccineView.setText(vaccineWrapper.getName());
+                vName = vaccineWrapper.getName();
             }
-            CheckBox select = (CheckBox) vaccinationName.findViewById(R.id.select);
-            select.setVisibility(View.GONE);
 
-            vaccinationNameLayout.addView(vaccinationName);
+            if (vName.contains("/")) {
+                String[] names = vName.split("/");
+                final List<RadioButton> radios = new ArrayList<>();
+                for (int i = 0; i < names.length; i++) {
+                    View vaccinationName = inflater.inflate(R.layout.vaccination_name, null);
+                    TextView vaccineView = (TextView) vaccinationName.findViewById(R.id.vaccine);
+
+                    String name = names[i].trim();
+                    vaccineView.setText(name);
+
+                    View select = vaccinationName.findViewById(R.id.select);
+                    select.setVisibility(View.GONE);
+
+                    RadioButton radio = (RadioButton) vaccinationName.findViewById(R.id.radio);
+                    radio.setVisibility(View.VISIBLE);
+                    if (i != 0) {
+                        radio.setChecked(false);
+                    }
+                    radios.add(radio);
+
+                    vaccinationNameLayout.addView(vaccinationName);
+                }
+
+                addRadioClickListener(radios);
+
+                for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
+                    View chilView = vaccinationNameLayout.getChildAt(i);
+                    chilView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            RadioButton childRadio = (RadioButton) view.findViewById(R.id.radio);
+                            addRadioClickListener(radios, childRadio);
+                        }
+                    });
+                }
+
+            } else {
+
+                View vaccinationName = inflater.inflate(R.layout.vaccination_name, null);
+                TextView vaccineView = (TextView) vaccinationName.findViewById(R.id.vaccine);
+
+                vaccineView.setText(vName);
+
+                View select = vaccinationName.findViewById(R.id.select);
+                select.setVisibility(View.GONE);
+
+                vaccinationNameLayout.addView(vaccinationName);
+            }
         } else {
             for (VaccineWrapper vaccineWrapper : tags) {
 
@@ -111,6 +161,17 @@ public class VaccinationDialogFragment extends DialogFragment {
                 }
 
                 vaccinationNameLayout.addView(vaccinationName);
+            }
+
+            for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
+                View chilView = vaccinationNameLayout.getChildAt(i);
+                chilView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        CheckBox childSelect = (CheckBox) view.findViewById(R.id.select);
+                        childSelect.toggle();
+                    }
+                });
             }
 
             Button vaccinateToday = (Button) dialogView.findViewById(R.id.vaccinate_today);
@@ -143,6 +204,8 @@ public class VaccinationDialogFragment extends DialogFragment {
             public void onClick(View view) {
                 dismiss();
 
+                ArrayList<VaccineWrapper> tagsToUpdate = new ArrayList<VaccineWrapper>();
+
                 int day = earlierDatePicker.getDayOfMonth();
                 int month = earlierDatePicker.getMonth();
                 int year = earlierDatePicker.getYear();
@@ -151,22 +214,25 @@ public class VaccinationDialogFragment extends DialogFragment {
                 calendar.set(year, month, day);
                 DateTime dateTime = new DateTime(calendar.getTime());
                 if (tags.size() == 1) {
-                    tags.get(0).setUpdatedVaccineDate(dateTime, false);
-                } else
-                    for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
-                        View chilView = vaccinationNameLayout.getChildAt(i);
-                        CheckBox selectChild = (CheckBox) chilView.findViewById(R.id.select);
-                        if (selectChild.isChecked()) {
-                            TextView childVaccineView = (TextView) chilView.findViewById(R.id.vaccine);
-                            String checkedName = childVaccineView.getText().toString();
-                            VaccineWrapper tag = searchWrapperByName(checkedName);
-                            if (tag != null) {
-                                tag.setUpdatedVaccineDate(dateTime, false);
-                            }
+                    VaccineWrapper tag = tags.get(0);
+                    tag.setUpdatedVaccineDate(dateTime, false);
+
+                    String radioName = findSelectRadio(vaccinationNameLayout);
+                    if (radioName != null) {
+                        tag.setName(radioName);
+                    }
+                    tagsToUpdate.add(tag);
+                } else {
+                    List<String> selectedCheckboxes = findSelectedCheckBoxes(vaccinationNameLayout);
+                    for (String checkedName : selectedCheckboxes) {
+                        VaccineWrapper tag = searchWrapperByName(checkedName);
+                        if (tag != null) {
+                            tag.setUpdatedVaccineDate(dateTime, false);
+                            tagsToUpdate.add(tag);
                         }
                     }
-
-                listener.onVaccinateEarlier(tags, viewGroup);
+                }
+                listener.onVaccinateEarlier(tagsToUpdate, view);
 
             }
         });
@@ -177,25 +243,31 @@ public class VaccinationDialogFragment extends DialogFragment {
             public void onClick(View view) {
                 dismiss();
 
+                ArrayList<VaccineWrapper> tagsToUpdate = new ArrayList<VaccineWrapper>();
+
                 Calendar calendar = Calendar.getInstance();
                 DateTime dateTime = new DateTime(calendar.getTime());
                 if (tags.size() == 1) {
-                    tags.get(0).setUpdatedVaccineDate(dateTime, true);
-                } else
-                    for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
-                        View chilView = vaccinationNameLayout.getChildAt(i);
-                        CheckBox selectChild = (CheckBox) chilView.findViewById(R.id.select);
-                        if (selectChild.isChecked()) {
-                            TextView childVaccineView = (TextView) chilView.findViewById(R.id.vaccine);
-                            String checkedName = childVaccineView.getText().toString();
-                            VaccineWrapper tag = searchWrapperByName(checkedName);
-                            if (tag != null) {
-                                tag.setUpdatedVaccineDate(dateTime, true);
-                            }
+                    VaccineWrapper tag = tags.get(0);
+                    tag.setUpdatedVaccineDate(dateTime, true);
+
+                    String radioName = findSelectRadio(vaccinationNameLayout);
+                    if (radioName != null) {
+                        tag.setName(radioName);
+                    }
+                    tagsToUpdate.add(tag);
+                } else {
+                    List<String> selectedCheckboxes = findSelectedCheckBoxes(vaccinationNameLayout);
+                    for (String checkedName : selectedCheckboxes) {
+                        VaccineWrapper tag = searchWrapperByName(checkedName);
+                        if (tag != null) {
+                            tag.setUpdatedVaccineDate(dateTime, true);
+                            tagsToUpdate.add(tag);
                         }
                     }
+                }
 
-                listener.onVaccinateToday(tags, viewGroup);
+                listener.onVaccinateToday(tagsToUpdate, view);
 
             }
         });
@@ -217,18 +289,6 @@ public class VaccinationDialogFragment extends DialogFragment {
                 dismiss();
             }
         });
-
-        for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
-            View chilView = vaccinationNameLayout.getChildAt(i);
-            chilView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    CheckBox childSelect = (CheckBox) view.findViewById(R.id.select);
-                    childSelect.toggle();
-                }
-            });
-        }
-
 
         return dialogView;
     }
@@ -288,4 +348,53 @@ public class VaccinationDialogFragment extends DialogFragment {
         }
         return null;
     }
+
+    private void addRadioClickListener(final List<RadioButton> radios) {
+        for (final RadioButton radio : radios) {
+            radio.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    for (RadioButton otherRadio : radios) {
+                        otherRadio.setChecked(false);
+                    }
+                    radio.setChecked(true);
+                }
+            });
+        }
+    }
+
+    private void addRadioClickListener(final List<RadioButton> radios, RadioButton radio) {
+        for (RadioButton otherRadio : radios) {
+            otherRadio.setChecked(false);
+        }
+        radio.setChecked(true);
+    }
+
+    private List<String> findSelectedCheckBoxes(LinearLayout vaccinationNameLayout) {
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
+            View chilView = vaccinationNameLayout.getChildAt(i);
+            CheckBox selectChild = (CheckBox) chilView.findViewById(R.id.select);
+            if (selectChild.isChecked()) {
+                TextView childVaccineView = (TextView) chilView.findViewById(R.id.vaccine);
+                String checkedName = childVaccineView.getText().toString();
+                names.add(checkedName);
+            }
+        }
+
+        return names;
+    }
+
+    private String findSelectRadio(LinearLayout vaccinationNameLayout) {
+        for (int i = 0; i < vaccinationNameLayout.getChildCount(); i++) {
+            View chilView = vaccinationNameLayout.getChildAt(i);
+            RadioButton radioChild = (RadioButton) chilView.findViewById(R.id.radio);
+            if (radioChild.getVisibility() == View.VISIBLE && radioChild.isChecked()) {
+                TextView childVaccineView = (TextView) chilView.findViewById(R.id.vaccine);
+                return childVaccineView.getText().toString();
+            }
+        }
+        return null;
+    }
+
 }

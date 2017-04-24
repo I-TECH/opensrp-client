@@ -40,7 +40,7 @@ android {
         minSdkVersion 18
         targetSdkVersion 21
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.1.1"
         multiDexEnabled true
         dexOptions {
             javaMaxHeapSize "4g"
@@ -50,6 +50,25 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            resValue "string", 'opensrp_url', '"http://zeir.smartregister.org/opensrp"'
+            buildConfigField "String", 'OPENMRS_URL', '"http://openmrs.zeir.smartregister.org/openmrs"'
+            buildConfigField "String", 'OPENMRS_IDGEN_URL', '"/module/idgen/exportIdentifiers.form"'
+            buildConfigField "int", "OPENMRS_UNIQUE_ID_INITIAL_BATCH_SIZE", '250'
+            buildConfigField "int", "OPENMRS_UNIQUE_ID_BATCH_SIZE", '100'
+            buildConfigField "int", "OPENMRS_UNIQUE_ID_SOURCE", '1'
+            buildConfigField "int", "VACCINE_SYNC_TIME", '24'
+            buildConfigField "int", "DATABASE_VERSION", '2'
+        }
+
+        debug {
+            resValue "string", 'opensrp_url', '"http://46.101.51.199:8080/opensrp"'
+            buildConfigField "String", 'OPENMRS_URL', '""'
+            buildConfigField "String", 'OPENMRS_IDGEN_URL', '"/module/idgen/exportIdentifiers.form"'
+            buildConfigField "int", "OPENMRS_UNIQUE_ID_INITIAL_BATCH_SIZE", '250'
+            buildConfigField "int", "OPENMRS_UNIQUE_ID_BATCH_SIZE", '100'
+            buildConfigField "int", "OPENMRS_UNIQUE_ID_SOURCE", '2'
+            buildConfigField "int", "VACCINE_SYNC_TIME", '0'
+            buildConfigField "int", "DATABASE_VERSION", '2'
         }
     }
     packagingOptions {
@@ -81,5 +100,6 @@ dependencies {
         transitive = true;
     }
     compile 'id.zelory:compressor:1.0.4'
+    compile 'com.twotoasters.SectionCursorAdapter:library:1.0.+'
     //compile 'com.github.vijayrawatsan:android-json-form-wizard:1.1.1-SNAPSHOT'
 }

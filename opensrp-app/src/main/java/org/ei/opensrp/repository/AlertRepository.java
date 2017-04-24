@@ -14,9 +14,9 @@ import java.util.List;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.addAll;
 import static org.apache.commons.lang3.StringUtils.repeat;
-import static org.ei.drishti.dto.AlertStatus.complete;
-import static org.ei.drishti.dto.AlertStatus.from;
-import static org.ei.drishti.dto.AlertStatus.inProcess;
+import static org.ei.opensrp.domain.AlertStatus.complete;
+import static org.ei.opensrp.domain.AlertStatus.from;
+import static org.ei.opensrp.domain.AlertStatus.inProcess;
 
 public class AlertRepository extends DrishtiRepository {
     private static final String ALERTS_SQL = "CREATE TABLE alerts (caseID VARCHAR, scheduleName VARCHAR, visitCode VARCHAR, status VARCHAR, startDate VARCHAR, expiryDate VARCHAR, completionDate VARCHAR)";
@@ -147,6 +147,21 @@ public class AlertRepository extends DrishtiRepository {
                 ALERTS_TABLE_NAME, ALERTS_CASEID_COLUMN, ALERTS_VISIT_CODE_COLUMN,
                 insertPlaceholdersForInClause(names.length), ALERTS_STARTDATE_COLUMN), addAll(new String[]{entityId}, names));
         return readAllAlerts(cursor);
+    }
+
+
+    public Alert findByEntityIdAndScheduleName(String entityId, String scheduleName) {
+        SQLiteDatabase database = masterRepository.getReadableDatabase();
+        String[] caseAndScheduleNameColumnValues = {entityId, scheduleName};
+
+        String caseAndScheduleNameColumnSelections = ALERTS_CASEID_COLUMN + " = ? AND " + ALERTS_SCHEDULE_NAME_COLUMN + " = ?";
+
+        Cursor cursor = database.query(ALERTS_TABLE_NAME, ALERTS_TABLE_COLUMNS, caseAndScheduleNameColumnSelections, caseAndScheduleNameColumnValues, null, null, null, null);
+        List<Alert> alertList =  readAllAlerts(cursor);
+        if(!alertList.isEmpty()) {
+            return alertList.get(0);
+        }
+        return null;
     }
 
     private String insertPlaceholdersForInClause(int length) {

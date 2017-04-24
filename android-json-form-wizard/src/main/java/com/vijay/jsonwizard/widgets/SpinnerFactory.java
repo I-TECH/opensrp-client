@@ -36,6 +36,7 @@ public class SpinnerFactory implements FormWidgetFactory {
         String relevance = jsonObject.optString("relevance");
 
         List<View> views = new ArrayList<>(1);
+        JSONArray canvasIds = new JSONArray();
         MaterialSpinner spinner = (MaterialSpinner) LayoutInflater.from(context).inflate(R.layout.item_spinner, null);
 
         String hint = jsonObject.optString("hint");
@@ -45,12 +46,14 @@ public class SpinnerFactory implements FormWidgetFactory {
         }
 
         spinner.setId(ViewUtil.generateViewId());
+        canvasIds.put(spinner.getId());
 
         spinner.setTag(R.id.key, jsonObject.getString("key"));
         spinner.setTag(R.id.openmrs_entity_parent, openMrsEntityParent);
         spinner.setTag(R.id.openmrs_entity, openMrsEntity);
         spinner.setTag(R.id.openmrs_entity_id, openMrsEntityId);
         spinner.setTag(R.id.type, jsonObject.getString("type"));
+        spinner.setTag(R.id.address,  stepName + ":" + jsonObject.getString("key"));
 
         JSONObject requiredObject = jsonObject.optJSONObject("v_required");
         if (requiredObject != null) {
@@ -65,9 +68,11 @@ public class SpinnerFactory implements FormWidgetFactory {
         int indexToSelect = -1;
         if (!TextUtils.isEmpty(jsonObject.optString("value"))) {
             valueToSelect = jsonObject.optString("value");
-            if (jsonObject.has("read_only")) {
-                spinner.setEnabled(!jsonObject.getBoolean("read_only"));
-            }
+        }
+
+        if (jsonObject.has("read_only")) {
+            spinner.setEnabled(!jsonObject.getBoolean("read_only"));
+            spinner.setFocusable(!jsonObject.getBoolean("read_only"));
         }
 
         JSONArray valuesJson = jsonObject.optJSONArray("values");
@@ -90,7 +95,9 @@ public class SpinnerFactory implements FormWidgetFactory {
             spinner.setSelection(indexToSelect + 1, true);
             spinner.setOnItemSelectedListener(listener);
         }
+        ((JsonApi) context).addFormDataView(spinner);
         views.add(spinner);
+        spinner.setTag(R.id.canvas_ids, canvasIds.toString());
         if (relevance != null && context instanceof JsonApi) {
             spinner.setTag(R.id.relevance, relevance);
             ((JsonApi) context).addSkipLogicView(spinner);

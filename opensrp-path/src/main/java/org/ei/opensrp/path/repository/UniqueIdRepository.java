@@ -1,4 +1,4 @@
-package org.ei.opensrp.repository;
+package org.ei.opensrp.path.repository;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class UniqueIdRepository extends DrishtiRepository {
+public class UniqueIdRepository extends BaseRepository {
     private static final String TAG = UniqueIdRepository.class.getCanonicalName();
     private static final String UniqueIds_SQL = "CREATE TABLE unique_ids(_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,openmrs_id VARCHAR NOT NULL,status VARCHAR NULL, used_by VARCHAR NULL,synced_by VARCHAR NULL,created_at DATETIME NULL,updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP )";
     public static final String UniqueIds_TABLE_NAME = "unique_ids";
@@ -32,15 +32,19 @@ public class UniqueIdRepository extends DrishtiRepository {
     public static String STATUS_NOT_USED = "not_used";
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    @Override
-    protected void onCreate(SQLiteDatabase database) {
+
+    public UniqueIdRepository(PathRepository pathRepository) {
+        super(pathRepository);
+    }
+
+    protected static void createTable(SQLiteDatabase database) {
         database.execSQL(UniqueIds_SQL);
     }
 
     public void add(UniqueId uniqueId) {
-        SQLiteDatabase database = masterRepository.getWritableDatabase();
+        SQLiteDatabase database = getPathRepository().getWritableDatabase();
         database.insert(UniqueIds_TABLE_NAME, null, createValuesFor(uniqueId));
-        database.close();
+        //database.close();
     }
 
     /**
@@ -49,7 +53,7 @@ public class UniqueIdRepository extends DrishtiRepository {
      * @param ids
      */
     public void bulkInserOpenmrsIds(List<String> ids) {
-        SQLiteDatabase database = masterRepository.getWritableDatabase();
+        SQLiteDatabase database = getPathRepository().getWritableDatabase();
 
         try {
             String userName = Context.getInstance().allSharedPreferences().fetchRegisteredANM();
@@ -65,7 +69,7 @@ public class UniqueIdRepository extends DrishtiRepository {
             }
             database.setTransactionSuccessful();
         } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, e.getMessage(), e);
         } finally {
             database.endTransaction();
         }
@@ -73,19 +77,21 @@ public class UniqueIdRepository extends DrishtiRepository {
 
     public Long countUnUsedIds() {
         long count = 0;
+        Cursor cursor = null;
         try {
-            SQLiteDatabase database = masterRepository.getWritableDatabase();
-
-            Cursor cursor = database.rawQuery("SELECT COUNT (*) FROM " + UniqueIds_TABLE_NAME + " WHERE " + STATUS_COLUMN + "=?",
+            cursor = getPathRepository().getWritableDatabase().rawQuery("SELECT COUNT (*) FROM " + UniqueIds_TABLE_NAME + " WHERE " + STATUS_COLUMN + "=?",
                     new String[]{String.valueOf(STATUS_NOT_USED)});
             if (null != cursor)
                 if (cursor.getCount() > 0) {
                     cursor.moveToFirst();
                     count = cursor.getInt(0);
                 }
-            cursor.close();
+
         } catch (SQLException e) {
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, e.getMessage(), e);
+        } finally {
+            if (cursor != null)
+                cursor.close();
         }
         return count;
     }
@@ -96,10 +102,20 @@ public class UniqueIdRepository extends DrishtiRepository {
      * @return
      */
     public UniqueId getNextUniqueId() {
-        SQLiteDatabase database = masterRepository.getReadableDatabase();
-        Cursor cursor = database.query(UniqueIds_TABLE_NAME, UniqueIds_TABLE_COLUMNS, STATUS_COLUMN + " = ?", new String[]{STATUS_NOT_USED}, null, null, CREATED_AT_COLUMN + " ASC", "1");
-        List<UniqueId> ids = readAll(cursor);
-        return ids.isEmpty()?null:ids.get(0);
+        UniqueId uniqueId = null;
+        Cursor cursor = null;
+        try {
+            cursor = getPathRepository().getReadableDatabase().query(UniqueIds_TABLE_NAME, UniqueIds_TABLE_COLUMNS, STATUS_COLUMN + " = ?", new String[]{STATUS_NOT_USED}, null, null, CREATED_AT_COLUMN + " ASC", "1");
+            List<UniqueId> ids = readAll(cursor);
+            uniqueId = ids.isEmpty() ? null : ids.get(0);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return uniqueId;
     }
 
     /**
@@ -109,19 +125,21 @@ public class UniqueIdRepository extends DrishtiRepository {
      */
     public void close(String openmrsId) {
         String userName = Context.getInstance().allSharedPreferences().fetchRegisteredANM();
-        if(!openmrsId.contains("-")){
+        if (!openmrsId.contains("-")) {
             openmrsId = formatId(openmrsId);
         }
         ContentValues values = new ContentValues();
         values.put(STATUS_COLUMN, STATUS_USED);
         values.put(USED_BY_COLUMN, userName);
-        masterRepository.getWritableDatabase().update(UniqueIds_TABLE_NAME, values, OPENMRS_ID_COLUMN + " = ?", new String[]{openmrsId});
+        getPathRepository().getWritableDatabase().update(UniqueIds_TABLE_NAME, values, OPENMRS_ID_COLUMN + " = ?", new String[]{openmrsId});
     }
+
     private String formatId(String openmrsId) {
-        int lastIndex=openmrsId.length()-1;
+        int lastIndex = openmrsId.length() - 1;
         String tail = openmrsId.substring(lastIndex);
-        return openmrsId.substring(0, lastIndex) + "-"+tail;
+        return openmrsId.substring(0, lastIndex) + "-" + tail;
     }
+
     private ContentValues createValuesFor(UniqueId uniqueId) {
         ContentValues values = new ContentValues();
         values.put(ID_COLUMN, uniqueId.getId());
@@ -134,8 +152,7 @@ public class UniqueIdRepository extends DrishtiRepository {
 
     private List<UniqueId> readAll(Cursor cursor) {
         List<UniqueId> UniqueIds = new ArrayList<UniqueId>();
-
-        try {
+        if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
             cursor.moveToFirst();
             while (cursor.getCount() > 0 && !cursor.isAfterLast()) {
 
@@ -143,9 +160,6 @@ public class UniqueIdRepository extends DrishtiRepository {
 
                 cursor.moveToNext();
             }
-            cursor.close();
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
         }
         return UniqueIds;
     }
