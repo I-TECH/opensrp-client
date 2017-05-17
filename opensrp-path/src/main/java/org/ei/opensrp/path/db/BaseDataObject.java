@@ -1,11 +1,12 @@
 package org.ei.opensrp.path.db;
 
 import org.joda.time.DateTime;
+import org.opensrp.api.domain.User;
 
 public abstract class BaseDataObject {
 
 	
-	private String creator;
+	private User creator;
 	
 	private DateTime dateCreated;
 	
@@ -25,11 +26,11 @@ public abstract class BaseDataObject {
 
 	public BaseDataObject() {}
 	
-	public String getCreator() {
+	public User getCreator() {
 		return creator;
 	}
 
-	public void setCreator(String creator) {
+	public void setCreator(User creator) {
 		this.creator = creator;
 	}
 
@@ -97,7 +98,7 @@ public abstract class BaseDataObject {
 		this.serverVersion = serverVersion;
 	}
 
-	public BaseDataObject withCreator(String creator) {
+	public BaseDataObject withCreator(User creator) {
 		this.creator = creator;
 		return this;
 	}

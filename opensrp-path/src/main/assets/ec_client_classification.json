@@ -14,7 +14,7 @@
           },
           {
             "field": "eventType",
-            "field_value": "Birth Registration",
+            "field_value": "Child Enrollment",
             "creates_case": [
               "ec_child"
             ]

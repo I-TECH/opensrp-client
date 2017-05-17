@@ -230,7 +230,7 @@ public abstract class BaseActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_register) {
-            startJsonForm("child_enrollment", null);
+            startJsonForm("kip_child_enrollment", null);
         } else if (id == R.id.nav_record_vaccination_out_catchment) {
             startJsonForm("out_of_catchment_service", null);
         }/* else if (id == R.id.nav_settings) {

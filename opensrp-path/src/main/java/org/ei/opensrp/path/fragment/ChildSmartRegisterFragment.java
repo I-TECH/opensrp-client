@@ -141,7 +141,7 @@ public class ChildSmartRegisterFragment extends BaseSmartRegisterFragment {
 
     @Override
     protected void startRegistration() {
-        ((ChildSmartRegisterActivity) getActivity()).startFormActivity("child_enrollment", null, null);
+        ((ChildSmartRegisterActivity) getActivity()).startFormActivity("kip_child_enrollment", null, null);
     }
 
     @Override

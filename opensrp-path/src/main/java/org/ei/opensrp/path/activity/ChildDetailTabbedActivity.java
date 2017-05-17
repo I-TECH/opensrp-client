@@ -286,7 +286,7 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
         switch (item.getItemId()) {
             case R.id.registration_data:
                 String formmetadata = getmetaDataForEditForm();
-                startFormActivity("child_enrollment", childDetails.entityId(), formmetadata);
+                startFormActivity("kip_child_enrollment", childDetails.entityId(), formmetadata);
                 // User chose the "Settings" item, show the app settings UI...
                 return true;
             case R.id.immunization_data:
@@ -350,7 +350,7 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
     private String getmetaDataForEditForm() {
         Context context = getOpenSRPContext();
         try {
-            JSONObject form = FormUtils.getInstance(getApplicationContext()).getFormJson("child_enrollment");
+            JSONObject form = FormUtils.getInstance(getApplicationContext()).getFormJson("kip_child_enrollment");
             LocationPickerView lpv = new LocationPickerView(getApplicationContext());
             lpv.init(context);
             JsonFormUtils.addChildRegLocHierarchyQuestions(form, context);
@@ -375,7 +375,7 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
                         jsonObject.put(JsonFormUtils.READ_ONLY, true);
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "gender", true));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase(JsonFormUtils.KIP_ID)) {
                         jsonObject.put(JsonFormUtils.READ_ONLY, true);
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "zeir_id", true).replace("-", ""));
                     }

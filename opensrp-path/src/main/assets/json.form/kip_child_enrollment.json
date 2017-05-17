@@ -1,0 +1,515 @@
+{
+  "count": "1",
+  "encounter_type": "Child Enrollment",
+  "mother": {
+    "encounter_type": "New Woman Registration"
+  },
+  "entity_id": "",
+  "relational_id": "",
+  "metadata": {
+    "start": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "concept",
+      "openmrs_data_type": "start",
+      "openmrs_entity_id": "163137AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "end": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "concept",
+      "openmrs_data_type": "end",
+      "openmrs_entity_id": "163138AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "today": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "encounter",
+      "openmrs_entity_id": "encounter_date"
+    },
+    "deviceid": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "concept",
+      "openmrs_data_type": "deviceid",
+      "openmrs_entity_id": "163149AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "subscriberid": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "concept",
+      "openmrs_data_type": "subscriberid",
+      "openmrs_entity_id": "163150AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "simserial": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "concept",
+      "openmrs_data_type": "simserial",
+      "openmrs_entity_id": "163151AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "phonenumber": {
+      "openmrs_entity_parent": "",
+      "openmrs_entity": "concept",
+      "openmrs_data_type": "phonenumber",
+      "openmrs_entity_id": "163152AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "encounter_location":""
+  },
+  "step1": {
+    "title": "Child Enrollment",
+    "fields": [
+      {
+        "key": "Child_Photo",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "",
+        "openmrs_entity_id": "",
+        "type": "choose_image",
+        "uploadButtonText": "Take a photo of the child"
+      },
+      {
+        "key": "Home_Facility",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "",
+        "openmrs_entity_id": "",
+        "openmrs_data_type": "text",
+        "type": "tree",
+        "hint": "Child's home health facility *",
+        "tree": [],
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's home facility"
+        }
+      },
+      {
+        "key": "NATIONAL_UNIQUE_PATIENT_IDENTIFIER",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_identifier",
+        "openmrs_entity_id": "NATIONAL_UNIQUE_PATIENT_IDENTIFIER",
+        "type": "edit_text",
+        "hint": "NUPI",
+        "v_numeric": {
+          "value": "true",
+          "err": "Please enter a valid NUPI"
+        }
+      },
+      {
+        "key": "CWC_NUMBER",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_identifier",
+        "openmrs_entity_id": "CWC_NUMBER",
+        "type": "edit_text",
+        "hint": "CWC Number",
+        "v_numeric": {
+          "value": "true",
+          "err": "Please enter a valid CWC number"
+        }
+      },
+      {
+        "key": "HDSS_NUMBER",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_identifier",
+        "openmrs_entity_id": "HDSS_NUMBER",
+        "type": "edit_text",
+        "hint": "HDSS Number",
+        "v_numeric": {
+          "value": "true",
+          "err": "Please enter a valid HDSS number"
+        }
+      },
+      {
+        "key": "KIP_ID",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_identifier",
+        "openmrs_entity_id": "OPENMRS_ID",
+        "type": "barcode",
+        "barcode_type": "qrcode",
+        "hint": "Child's KIP ID *",
+        "scanButtonText": "Scan QR Code",
+        "value": "0",
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the Child's KIP ID"
+        }
+      },
+      {
+        "key": "Child_Register_Card_Number",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_attribute",
+        "openmrs_entity_id": "Child_Register_Card_Number",
+        "type": "edit_text",
+        "hint": "Child's register card number"
+      },
+      {
+        "key": "Child_Birth_Certificate",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_attribute",
+        "openmrs_entity_id": "Child_Birth_Certificate",
+        "type": "edit_text",
+        "hint": "Child's birth certificate number"
+      },
+      {
+        "key": "First_Name",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "first_name",
+        "type": "edit_text",
+        "hint": "First name",
+        "edit_type": "name",
+        "v_regex": {
+          "value": "[A-Za-z\\s\.\-]*",
+          "err": "Please enter a valid name"
+        }
+      },
+      {
+        "key": "Last_Name",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "last_name",
+        "type": "edit_text",
+        "hint": "Last name *",
+        "edit_type": "name",
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the last name"
+        },
+        "v_regex": {
+          "value": "[A-Za-z\\s\.\-]*",
+          "err": "Please enter a valid name"
+        }
+      },
+      {
+        "key": "Sex",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "gender",
+        "type": "spinner",
+        "hint": "Sex *",
+        "values": [
+          "Male",
+          "Female"
+        ],
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the sex"
+        }
+      },
+      {
+        "key": "Date_Birth",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "birthdate",
+        "type": "date_picker",
+        "hint": "Child's DOB *",
+        "expanded": false,
+        "duration": {
+          "label": "Age"
+        },
+        "min_date": "today-5y",
+        "max_date": "today",
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the date of birth"
+        }
+      },
+      {
+        "key": "First_Health_Facility_Contact",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "concept",
+        "openmrs_entity_id": "163260AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "openmrs_data_type": "text",
+        "type": "date_picker",
+        "hint": "Date first seen *",
+        "expanded": false,
+        "min_date": "today-5y",
+        "max_date": "today",
+        "v_required": {
+          "value": "true",
+          "err": "Enter the date that the child was first seen at a health facility for immunization services"
+        },
+        "constraints": [
+          {
+            "type": "date",
+            "ex": "greaterThanEqualTo(., step1:Date_Birth)",
+            "err": "Date first seen can't occur before date of birth"
+          }
+        ]
+      },
+      {
+        "key": "Birth_Weight",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "concept",
+        "openmrs_entity_id": "5916AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "openmrs_data_type": "text",
+        "type": "edit_text",
+        "hint": "Birth weight (kg) *",
+        "v_min": {
+          "value": "0.1",
+          "err": "Weight must be greater than 0"
+        },
+        "v_numeric": {
+          "value": "true",
+          "err": "Enter a valid weight"
+        },
+        "v_required": {
+          "value": "true",
+          "err": "Enter the child's birth weight"
+        }
+      },
+      {
+        "key": "Mother_Guardian_First_Name",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "first_name",
+        "entity_id": "mother",
+        "type": "edit_text",
+        "hint": "Mother/guardian first name *",
+        "edit_type": "name",
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the mother/guardian's first name"
+        },
+        "v_regex": {
+          "value": "[A-Za-z\\s\.\-]*",
+          "err": "Please enter a valid name"
+        }
+      },
+      {
+        "key": "Mother_Guardian_Last_Name",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "last_name",
+        "entity_id": "mother",
+        "type": "edit_text",
+        "hint": "Mother/guardian last name *",
+        "edit_type": "name",
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the mother/guardian's last name"
+        },
+        "v_regex": {
+          "value": "[A-Za-z\\s\.\-]*",
+          "err": "Please enter a valid name"
+        }
+      },
+      {
+        "key": "Mother_Guardian_Gender",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "gender",
+        "entity_id": "mother",
+        "type": "spinner",
+        "hint": "Mother/guardian gender *",
+        "value": "Female",
+        "values": [
+          "Male",
+          "Female"
+        ],
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the mother/guardian's gender"
+        }
+      },
+      {
+        "key": "Mother_Guardian_Date_Birth",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "birthdate",
+        "entity_id": "mother",
+        "type": "date_picker",
+        "hint": "Mother/guardian DOB",
+        "expanded": false,
+        "duration": {
+          "label": "Age"
+        },
+        "min_date": "01-01-1900",
+        "max_date": "today-10y"
+      },
+      {
+        "key": "Mother_Guardian_ID",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_attribute",
+        "openmrs_entity_id": "ID_Number",
+        "entity_id": "mother",
+        "type": "edit_text",
+        "hint": "Mother/guardian ID number",
+        "v_regex": {
+          "value": "([0-9]{6}/[0-9]{2}/[0-9])|\s*",
+          "err": "Number must take the format of ######/##/#"
+        }
+      },
+      {
+        "key": "Mother_Guardian_Number",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "concept",
+        "openmrs_entity_id": "159635AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "type": "edit_text",
+        "hint": "Mother/guardian phone number",
+        "v_numeric": {
+          "value": "true",
+          "err": "Number must begin with 095, 096, or 097 and must be a total of 10 digits in length"
+        },
+        "v_regex": {
+          "value": "(09[5-7][0-9]{7})|\s*",
+          "err": "Number must begin with 095, 096, or 097 and must be a total of 10 digits in length"
+        }
+      },
+      {
+        "key": "Father_Guardian_Name",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "concept",
+        "openmrs_entity_id": "1594AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "openmrs_data_type": "text",
+        "type": "edit_text",
+        "hint": "Father/guardian full name",
+        "edit_type": "name",
+        "v_regex": {
+          "value": "[A-Za-z\\s\.\-]*",
+          "err": "Please enter a valid name"
+        }
+      },
+      {
+        "key": "Father_Guardian_ID",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_attribute",
+        "openmrs_entity_id": "Father_ID_Number",
+        "type": "edit_text",
+        "hint": "Father/guardian ID number",
+        "v_regex": {
+          "value": "([0-9]{6}/[0-9]{2}/[0-9])|\s*",
+          "err": "Number must take the format of ######/##/#"
+        }
+      },
+      {
+        "key": "Ce_County",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "stateProvince",
+        "openmrs_data_type": "text",
+        "type": "tree",
+        "hint": "County *",
+        "tree": [],
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's county"
+        }
+      },
+      {
+        "key": "Ce_Sub_County",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "countyDistrict",
+        "openmrs_data_type": "text",
+        "type": "tree",
+        "hint": "Sub County *",
+        "tree": [],
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's sub county"
+        }
+      },
+      {
+        "key": "Ce_Ward",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "cityVillage",
+        "openmrs_data_type": "text",
+        "type": "tree",
+        "hint": "Ward *",
+        "tree": [],
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's ward"
+        }
+      },
+      {
+        "key": "Ce_Sub_Location",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "address4",
+        "openmrs_data_type": "text",
+        "type": "edit_text",
+        "hint": "Sub Location *",
+        "edit_type": "name",
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's sub location"
+        }
+      },
+      {
+        "key": "Ce_Village",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "address3",
+        "openmrs_data_type": "text",
+        "type": "edit_text",
+        "hint": "Village *",
+        "edit_type": "name",
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's village"
+        }
+      },
+      {
+        "key": "Ce_Landmark",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "address2",
+        "type": "edit_text",
+        "hint": "Landmark",
+        "edit_type": "name"
+      },
+      {
+        "key": "Ce_Address",
+        "openmrs_entity_parent": "usual_residence",
+        "openmrs_entity": "person_address",
+        "openmrs_entity_id": "address1",
+        "openmrs_data_type": "text",
+        "type": "edit_text",
+        "hint": "Address *",
+        "edit_type": "name"
+      },
+      {
+        "key": "CHW_Name",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_attribute",
+        "openmrs_entity_id": "CHW_Name",
+        "type": "edit_text",
+        "hint": "CHW name",
+        "edit_type": "name",
+        "v_regex": {
+          "value": "[A-Za-z\\s\.\-]*",
+          "err": "Please enter a valid name"
+        }
+      },
+      {
+        "key": "CHW_Phone_Number",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "person_attribute",
+        "openmrs_entity_id": "CHW_Phone_Number",
+        "type": "edit_text",
+        "hint": "CHW phone number",
+        "v_numeric": {
+          "value": "true",
+          "err": "Number must begin with 095, 096, or 097 and must be a total of 10 digits in length"
+        },
+        "v_regex": {
+          "value": "(09[5-7][0-9]{7})|\s*",
+          "err": "Number must begin with 095, 096, or 097 and must be a total of 10 digits in length"
+        }
+      },
+      {
+        "key": "PMTCT_Status",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "concept",
+        "openmrs_entity_id": "1396AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "type": "spinner",
+        "hint": "HIV exposure",
+        "values": [
+          "CE",
+          "MSU",
+          "CNE"
+        ],
+        "openmrs_choice_ids": {
+          "CE": "",
+          "MSU": "",
+          "CNE": ""
+        }
+      }
+    ]
+  }
+}

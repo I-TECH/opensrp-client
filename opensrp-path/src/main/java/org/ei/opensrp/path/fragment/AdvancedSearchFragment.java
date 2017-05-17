@@ -94,7 +94,7 @@ public class AdvancedSearchFragment extends BaseSmartRegisterFragment {
     public static final String INACTIVE = "inactive";
     private static final String LOST_TO_FOLLOW_UP = "lost_to_follow_up";
 
-    private static final String ZEIR_ID = "zeir_id";
+    private static final String KIP_ID = "kip_id";
     private static final String FIRST_NAME = "first_name";
     private static final String LAST_NAME = "last_name";
     private static final String NRC_NUMBER = "nrc_number";
@@ -190,7 +190,7 @@ public class AdvancedSearchFragment extends BaseSmartRegisterFragment {
 
     @Override
     protected void startRegistration() {
-        ((ChildSmartRegisterActivity) getActivity()).startFormActivity("child_enrollment", null, null);
+        ((ChildSmartRegisterActivity) getActivity()).startFormActivity("kip_child_enrollment", null, null);
     }
 
     private class ClientActionHandler implements View.OnClickListener {
@@ -413,10 +413,10 @@ public class AdvancedSearchFragment extends BaseSmartRegisterFragment {
         if (StringUtils.isNotBlank(zeirIdString))
 
         {
-            searchCriteriaString += " ZEIR ID: \"" + bold(zeirIdString) + "\",";
-            String key = ZEIR_ID;
+            searchCriteriaString += " KIP ID: \"" + bold(zeirIdString) + "\",";
+            String key = KIP_ID;
             if (!outOfArea) {
-                key = tableName + "." + ZEIR_ID;
+                key = tableName + "." + KIP_ID;
             }
             editMap.put(key, zeirIdString.trim());
         }
@@ -982,7 +982,7 @@ public class AdvancedSearchFragment extends BaseSmartRegisterFragment {
         public void onEvent(final JSONArray jsonArray) {
 
 
-            String[] columns = new String[]{"_id", "relationalid", FIRST_NAME, "middle_name", LAST_NAME, "gender", "dob", ZEIR_ID, "epi_card_number", MOTHER_GUARDIAN_FIRST_NAME, MOTHER_GUARDIAN_LAST_NAME, "inactive", "lost_to_follow_up"};
+            String[] columns = new String[]{"_id", "relationalid", FIRST_NAME, "middle_name", LAST_NAME, "gender", "dob", KIP_ID, "epi_card_number", MOTHER_GUARDIAN_FIRST_NAME, MOTHER_GUARDIAN_LAST_NAME, "inactive", "lost_to_follow_up"};
             matrixCursor = new AdvancedMatrixCursor(columns);
 
             if (jsonArray != null) {
@@ -1064,7 +1064,7 @@ public class AdvancedSearchFragment extends BaseSmartRegisterFragment {
                                 Log.e(getClass().getName(), e.toString(), e);
                             }
                         }
-                        zeirId = getJsonString(getJsonObject(child, "identifiers"), JsonFormUtils.ZEIR_ID);
+                        zeirId = getJsonString(getJsonObject(child, "identifiers"), JsonFormUtils.KIP_ID);
                         if (StringUtils.isNotBlank(zeirId)) {
                             zeirId = zeirId.replace("-", "");
                         }

@@ -441,12 +441,14 @@ public class ClientProcessor {
                     }
                     //special handler for relationalid
                     if (dataSegment != null && dataSegment.equalsIgnoreCase("relationships")) {
-                        JSONObject relationshipsObject = jsonDocument.getJSONObject("relationships");
-                        JSONArray relationshipsArray = relationshipsObject.getJSONArray(fieldName);
-                        if (relationshipsArray != null && relationshipsArray.length() > 0) {
-                            List<String> relationalIds = getValues(relationshipsArray);
-                            contentValues.put(columnName, relationalIds.get(0));
+                        if(jsonDocument.has("relationships")) {
+                            JSONObject relationshipsObject = jsonDocument.getJSONObject("relationships");
+                            JSONArray relationshipsArray = relationshipsObject.getJSONArray(fieldName);
+                            if (relationshipsArray != null && relationshipsArray.length() > 0) {
+                                List<String> relationalIds = getValues(relationshipsArray);
+                                contentValues.put(columnName, relationalIds.get(0));
 
+                            }
                         }
                         continue;
                     }

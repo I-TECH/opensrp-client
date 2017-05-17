@@ -62,6 +62,8 @@ public class ECSyncUpdater {
             Response resp = httpAgent.fetch(url);
             if (resp.isFailure()) {
                 throw new Exception(SEARCH_URL + " not returned data");
+            }else{
+                Log.i(ECSyncUpdater.class.getName(), "Response: " + new JSONObject((String) resp.payload()));
             }
 
             JSONObject jsonObject = new JSONObject((String) resp.payload());

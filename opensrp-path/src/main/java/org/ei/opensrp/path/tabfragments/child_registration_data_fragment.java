@@ -96,7 +96,7 @@ public class child_registration_data_fragment extends Fragment {
             WidgetFactory wd = new WidgetFactory();
 
             layout.addView(wd.createTableRow(inflater, container, "Child's home health facility", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "Home_Facility", false)))));
-            layout.addView(wd.createTableRow(inflater, container, "Child's ZEIR ID", Utils.getValue(childDetails.getColumnmaps(), "zeir_id", false)));
+            layout.addView(wd.createTableRow(inflater, container, "Child's KIP ID", Utils.getValue(childDetails.getColumnmaps(), "zeir_id", false)));
             layout.addView(wd.createTableRow(inflater, container, "Child's register card number", Utils.getValue(Detailsmap, "Child_Register_Card_Number", false)));
             layout.addView(wd.createTableRow(inflater, container, "Child's birth certificate number", Utils.getValue(Detailsmap, "Child_Birth_Certificate", false)));
             layout.addView(wd.createTableRow(inflater, container, "First name", Utils.getValue(childDetails.getColumnmaps(), "first_name", true)));
@@ -145,23 +145,17 @@ public class child_registration_data_fragment extends Fragment {
             layout.addView(wd.createTableRow(inflater, container, "Father/guardian full name", Utils.getValue(Detailsmap, "Father_Guardian_Name", true)));
             layout.addView(wd.createTableRow(inflater, container, "Father/guardian NRC number", Utils.getValue(Detailsmap, "Father_NRC_Number", true)));
 
-            String placeofnearth_Choice = Utils.getValue(Detailsmap, "Place_Birth", true);
-            if (placeofnearth_Choice.equalsIgnoreCase("1588AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                placeofnearth_Choice = "Health facility";
-            }
-            if (placeofnearth_Choice.equalsIgnoreCase("1536AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")) {
-                placeofnearth_Choice = "Home";
-            }
-            layout.addView(wd.createTableRow(inflater, container, "Place of birth", placeofnearth_Choice));
-            layout.addView(wd.createTableRow(inflater, container, "Health facility the child was born in", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "Birth_Facility_Name", false)))));
-            layout.addView(wd.createTableRow(inflater, container, "Child's residential area", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "Residential_Area", true)))));
-            layout.addView(wd.createTableRow(inflater, container, "Other residential area", Utils.getValue(Detailsmap, "Residential_Area_Other", true)));
-            layout.addView(wd.createTableRow(inflater, container, "Home address", Utils.getValue(Detailsmap, "address2", true)));
+            layout.addView(wd.createTableRow(inflater, container, "County", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "stateProvince", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Sub County", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "countyDistrict", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Ward", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "cityVillage", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Location", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "address5", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Sub Location", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "address4", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Village", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "address3", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Landmark", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "address2", true)))));
+            layout.addView(wd.createTableRow(inflater, container, "Address", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "address1", true)))));
 
-            layout.addView(wd.createTableRow(inflater, container, "Landmark", Utils.getValue(Detailsmap, "address1", true)));
             layout.addView(wd.createTableRow(inflater, container, "CHW name", Utils.getValue(Detailsmap, "CHW_Name", true)));
             layout.addView(wd.createTableRow(inflater, container, "CHW phone number", Utils.getValue(Detailsmap, "CHW_Phone_Number", true)));
-            layout.addView(wd.createTableRow(inflater, container, "HIV exposure", Utils.getValue(Detailsmap, "pmtct_status", true)));
         }
     }
 

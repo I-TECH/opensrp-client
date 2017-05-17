@@ -29,6 +29,7 @@ import org.ei.opensrp.domain.Vaccine;
 import org.ei.opensrp.domain.Weight;
 import org.ei.opensrp.path.R;
 import org.ei.opensrp.path.application.VaccinatorApplication;
+import org.ei.opensrp.path.db.UniqueIdType;
 import org.ei.opensrp.path.repository.BaseRepository;
 import org.ei.opensrp.path.repository.PathRepository;
 import org.ei.opensrp.path.repository.UniqueIdRepository;
@@ -94,12 +95,13 @@ public class JsonFormUtils {
     public static final String STEP1 = "step1";
     public static final String READ_ONLY = "read_only";
     private static final String METADATA = "metadata";
-    public static final String ZEIR_ID = "ZEIR_ID";
-    public static final String M_ZEIR_ID = "M_ZEIR_ID";
+    public static final String KIP_ID = "KIP_ID";
+    public static final String M_KIP_ID = "M_KIP_ID";
     public static final String attributes = "attributes";
     public static final  String encounterType = "Update Birth Registration";
     private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
+    public static final String OPENMRS_ID = "OPENMRS_ID";
+    public static final String OPENMRS_ID_ = "OpenMRS ID";
 
 
     public static final SimpleDateFormat FORM_DATE = new SimpleDateFormat("dd-MM-yyyy");
@@ -114,7 +116,7 @@ public class JsonFormUtils {
             JSONObject form = new JSONObject(jsonString);
             if(form.getString("encounter_type").equals("Out of Catchment Service")) {
                 saveOutOfAreaService(context, openSrpContext, jsonString);
-            } else if (form.getString("encounter_type").equals("Birth Registration")) {
+            } else if (form.getString("encounter_type").equals("Child Enrollment")) {
                 saveBirthRegistration(context, openSrpContext, jsonString, providerId, "Child_Photo", "child", "mother");
             }
         } catch (JSONException e) {
@@ -160,8 +162,8 @@ public class JsonFormUtils {
             for (int i = 0; i < fields.length(); i++) {
                 String key = fields.getJSONObject(i).getString("key");
                 if (key.equals("Home_Facility")
-                        || key.equals("Birth_Facility_Name")
-                        || key.equals("Residential_Area")) {
+                        || key.equals("Ce_County")|| key.equals("Ce_Sub_County")
+                        || key.equals("Ce_Ward") || key.equals("Ce_Sub_Location")) {
                     try {
                         String rawValue = fields.getJSONObject(i).getString("value");
                         JSONArray valueArray = new JSONArray(rawValue);
@@ -226,9 +228,10 @@ public class JsonFormUtils {
                 ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
             }
 
-            String zeirId = c.getIdentifier(ZEIR_ID);
+            String kipId = c.getIdentifier(KIP_ID);
             //mark zeir id as used
-           VaccinatorApplication.getInstance().uniqueIdRepository().close(zeirId);
+            VaccinatorApplication.getInstance().uniqueIdRepository().close(kipId);
+            VaccinatorApplication.getInstance().uniqueIdRepository().close(c.getIdentifier(OPENMRS_ID_));
 
             String imageLocation = getFieldValue(fields, imageKey);
             saveImage(context, providerId, entityId, imageLocation);
@@ -378,7 +381,7 @@ public class JsonFormUtils {
             } else if (curField.getString("key").equals("OA_Service_Date")) {
                 foundFields++;
                 serviceDate = curField.getString("value");
-            } else if (curField.getString("key").equals("ZEIR_ID")) {
+            } else if (curField.getString("key").equals("KIP_ID")) {
                 foundFields++;
                 zeirId = formatChildUniqueId(curField.getString("value"));
             }
@@ -439,7 +442,7 @@ public class JsonFormUtils {
                 }
             } else if (curField.getString("key").equals("OA_Service_Date")) {
                 serviceDate = curField.getString("value");
-            } else if (curField.getString("key").equals("ZEIR_ID")) {
+            } else if (curField.getString("key").equals("KIP_ID")) {
                 zeirId = formatChildUniqueId(curField.getString("value"));
             }
         }
@@ -735,7 +738,7 @@ public class JsonFormUtils {
         if (entityVal != null && entityVal.equals(entity)) {
             String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
 
-            if (entityIdVal.equals(ZEIR_ID)) {
+            if (entityIdVal.equals(KIP_ID)) {
                 value = formatChildUniqueId(value);
             }
 
@@ -1025,10 +1028,10 @@ public class JsonFormUtils {
         String bb = getSubFormFieldValue(fields, FormEntityConstants.Person.birthdate, bindType);
 
         Map<String, String> idents = extractIdentifiers(fields, bindType);
-        String parentIdentifier = parent.getIdentifier(ZEIR_ID);
+        String parentIdentifier = parent.getIdentifier(KIP_ID);
         if (StringUtils.isNotBlank(parentIdentifier)) {
             String identifier = parentIdentifier.concat("_").concat(bindType);
-            idents.put(M_ZEIR_ID, identifier);
+            idents.put(M_KIP_ID, identifier);
         }
 
         String middleName = getSubFormFieldValue(fields, FormEntityConstants.Person.middle_name, bindType);
@@ -1255,7 +1258,7 @@ public class JsonFormUtils {
         if (entityVal != null && entityVal.equals(entity)) {
             String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
 
-            if (entityIdVal.equals(ZEIR_ID) && StringUtils.isNotBlank(value) && !value.contains("-")) {
+            if (entityIdVal.equals(KIP_ID) && StringUtils.isNotBlank(value) && !value.contains("-")) {
                 StringBuilder stringBuilder = new StringBuilder(value);
                 stringBuilder.insert(value.length() - 1, '-');
                 value = stringBuilder.toString();
@@ -1485,21 +1488,18 @@ public class JsonFormUtils {
             JSONArray questions = form.getJSONObject("step1").getJSONArray("fields");
             ArrayList<String> allLevels = new ArrayList<>();
             allLevels.add("Country");
-            allLevels.add("Province");
-            allLevels.add("District");
+            allLevels.add("County");
+            allLevels.add("Sub County");
+            allLevels.add("Ward");
             allLevels.add("Health Facility");
-            allLevels.add("Zone");
-
-            ArrayList<String> healthFacilities = new ArrayList<>();
-            healthFacilities.add("Country");
-            healthFacilities.add("Province");
-            healthFacilities.add("District");
-            healthFacilities.add("Health Facility");
 
             JSONArray defaultLocation = generateDefaultLocationHierarchy(context, allLevels);
-            JSONArray defaultFacility = generateDefaultLocationHierarchy(context, healthFacilities);
-            JSONArray upToFacilities = generateLocationHierarchyTree(context, false, healthFacilities);
+            JSONArray defaultFacility = generateDefaultLocationHierarchy(context, new ArrayList<>(allLevels.subList(0,5)));
+            JSONArray upToFacilities = generateLocationHierarchyTree(context, false, new ArrayList<>(allLevels.subList(0,5)));
             JSONArray entireTree = generateLocationHierarchyTree(context, true, allLevels);
+            JSONArray counties = generateLocationHierarchyTree(context, true, new ArrayList<>(allLevels.subList(0,2)));
+            JSONArray subCounties = generateLocationHierarchyTree(context, true, new ArrayList<>(allLevels.subList(0,3)));
+            JSONArray wards = generateLocationHierarchyTree(context, true, new ArrayList<>(allLevels.subList(0,4)));
 
             for (int i = 0; i < questions.length(); i++) {
                 if (questions.getJSONObject(i).getString("key").equals("Home_Facility")
@@ -1510,6 +1510,21 @@ public class JsonFormUtils {
                     }
                 } else if (questions.getJSONObject(i).getString("key").equals("Residential_Area")) {
                     questions.getJSONObject(i).put("tree", new JSONArray(entireTree.toString()));
+                    if (defaultLocation != null) {
+                        questions.getJSONObject(i).put("default", defaultLocation.toString());
+                    }
+                } else if (questions.getJSONObject(i).getString("key").equals("Ce_County")) {
+                    questions.getJSONObject(i).put("tree", new JSONArray(counties.toString()));
+                    if (defaultLocation != null) {
+                        questions.getJSONObject(i).put("default", defaultLocation.toString());
+                    }
+                } else if (questions.getJSONObject(i).getString("key").equals("Ce_Sub_County")) {
+                    questions.getJSONObject(i).put("tree", new JSONArray(subCounties.toString()));
+                    if (defaultLocation != null) {
+                        questions.getJSONObject(i).put("default", defaultLocation.toString());
+                    }
+                } else if (questions.getJSONObject(i).getString("key").equals("Ce_Ward")) {
+                    questions.getJSONObject(i).put("tree", new JSONArray(wards.toString()));
                     if (defaultLocation != null) {
                         questions.getJSONObject(i).put("default", defaultLocation.toString());
                     }
@@ -1786,7 +1801,7 @@ public class JsonFormUtils {
             throws JSONException {
         String id = openMrsLocations.getJSONObject("node").getString("locationId");
         Log.d(TAG, "Current location id is "+id);
-        if (locationId.equals(id)) {
+        if (locationId.equalsIgnoreCase(id)) {
             return openMrsLocations.getJSONObject("node").getString("name");
         }
 
@@ -2053,7 +2068,7 @@ public class JsonFormUtils {
      * @param openSrpContext                Current OpenSRP context
      * @param jsonFormActivityRequestCode   The request code to be used to launch {@link JsonFormActivity}
      * @param formName                      The name of the form to launch
-     * @param entityId                      The unique entity id for the form (e.g child's ZEIR id)
+     * @param entityId                      The unique entity id for the form (e.g child's KIP id)
      * @param metaData                      The form's meta data
      * @param currentLocationId             OpenMRS id for the current device's location
      * @throws Exception
@@ -2064,15 +2079,19 @@ public class JsonFormUtils {
                                  String currentLocationId) throws Exception {
         Intent intent = new Intent(context, JsonFormActivity.class);
 
+        String openmrsId = "";
+
         JSONObject form = FormUtils.getInstance(context).getFormJson(formName);
         if (form != null) {
             form.getJSONObject("metadata").put("encounter_location", currentLocationId);
 
-            if (formName.equals("child_enrollment")) {
+            if (formName.equals("kip_child_enrollment")) {
                 if (StringUtils.isBlank(entityId)) {
                     UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
-                    entityId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
-                    if (entityId.isEmpty()) {
+                    entityId = uniqueIdRepo.getNextUniqueId(UniqueIdType.KIP_ID) != null ? uniqueIdRepo.getNextUniqueId(UniqueIdType.KIP_ID).getOpenmrsId() : "";
+                    openmrsId = uniqueIdRepo.getNextUniqueId(UniqueIdType.OPENMRS_ID) != null ? uniqueIdRepo.getNextUniqueId(UniqueIdType.OPENMRS_ID).getOpenmrsId() : "";
+
+                    if (entityId.isEmpty() || openmrsId.isEmpty()) {
                         Toast.makeText(context, context.getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -2089,11 +2108,16 @@ public class JsonFormUtils {
                 JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    if (jsonObject.getString(JsonFormUtils.KEY)
-                            .equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
-                        jsonObject.remove(JsonFormUtils.VALUE);
-                        jsonObject.put(JsonFormUtils.VALUE, entityId);
-                        continue;
+                    switch (jsonObject.getString(JsonFormUtils.KEY)){
+                        case JsonFormUtils.KIP_ID:
+                            jsonObject.remove(JsonFormUtils.VALUE);
+                            jsonObject.put(JsonFormUtils.VALUE, entityId);
+                            continue;
+                        case JsonFormUtils.OPENMRS_ID:
+                            jsonObject.remove(JsonFormUtils.VALUE);
+                            jsonObject.put(JsonFormUtils.VALUE, openmrsId);
+                            continue;
+                        default:
                     }
                 }
             } else if (formName.equals("out_of_catchment_service")) {
@@ -2102,7 +2126,7 @@ public class JsonFormUtils {
                 } else {
                     JSONArray fields = form.getJSONObject("step1").getJSONArray("fields");
                     for (int i = 0; i < fields.length(); i++) {
-                        if(fields.getJSONObject(i).getString("key").equals("ZEIR_ID")) {
+                        if(fields.getJSONObject(i).getString("key").equals("KIP_ID")) {
                             fields.getJSONObject(i).put(READ_ONLY, false);
                             break;
                         }
@@ -2113,11 +2137,16 @@ public class JsonFormUtils {
                 JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    if (jsonObject.getString(JsonFormUtils.KEY)
-                            .equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
-                        jsonObject.remove(JsonFormUtils.VALUE);
-                        jsonObject.put(JsonFormUtils.VALUE, entityId);
-                        continue;
+                    switch (jsonObject.getString(JsonFormUtils.KEY)){
+                        case JsonFormUtils.KIP_ID:
+                            jsonObject.remove(JsonFormUtils.VALUE);
+                            jsonObject.put(JsonFormUtils.VALUE, entityId);
+                            continue;
+                        case JsonFormUtils.OPENMRS_ID:
+                            jsonObject.remove(JsonFormUtils.VALUE);
+                            jsonObject.put(JsonFormUtils.VALUE, openmrsId);
+                            continue;
+                        default:
                     }
                 }
 

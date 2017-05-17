@@ -162,7 +162,7 @@ public abstract class BaseRegisterActivity extends SecuredNativeSmartRegisterAct
         int id = item.getItemId();
 
         if (id == R.id.nav_register) {
-            startFormActivity("child_enrollment", null, null);
+            startFormActivity("kip_child_enrollment", null, null);
         } else if (id == R.id.nav_record_vaccination_out_catchment) {
             startFormActivity("out_of_catchment_service", null, null);
         }/* else if (id == R.id.nav_settings) {

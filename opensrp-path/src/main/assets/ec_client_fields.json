@@ -14,7 +14,7 @@
           "column_name":"zeir_id",
           "type":"Client",
           "json_mapping":{
-            "field":"identifiers.M_ZEIR_ID"
+            "field":"identifiers.M_KIP_ID"
           }
         },
         {
@@ -180,10 +180,24 @@
           }
         },
         {
+          "column_name":"openmrs_id",
+          "type":"Client",
+          "json_mapping":{
+            "field":"identifiers.OPENMRS_ID"
+          }
+        },
+        {
+          "column_name":"cwc_number",
+          "type":"Client",
+          "json_mapping":{
+            "field":"identifiers.CWC_NUMBER"
+          }
+        },
+        {
           "column_name":"zeir_id",
           "type":"Client",
           "json_mapping":{
-            "field":"identifiers.ZEIR_ID"
+            "field":"identifiers.KIP_ID"
           }
         },
         {
@@ -329,6 +343,55 @@
           "type":"Client",
           "json_mapping":{
             "field":"addresses.subTown"
+          }
+        },
+        {
+          "column_name":"county",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.stateProvince"
+          }
+        },
+        {
+          "column_name":"sub_county",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.countyDistrict"
+          }
+        },
+        {
+          "column_name":"ward",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.cityVillage"
+          }
+        },
+        {
+          "column_name":"location",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.address5"
+          }
+        },
+        {
+          "column_name":"sub_location",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.address4"
+          }
+        },
+        {
+          "column_name":"village",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.address3"
+          }
+        },
+        {
+          "column_name":"landmark",
+          "type":"Client",
+          "json_mapping":{
+            "field":"addresses.addressFields.address2"
           }
         },
         {
