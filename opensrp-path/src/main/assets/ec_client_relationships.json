@@ -2,6 +2,13 @@
   {
     "client_relationship": "mother",
     "field": "entity_id",
+    "optional": false,
+    "comment": "this field is the name as it appears in the parent client document"
+  },
+  {
+    "client_relationship": "guardian",
+    "field": "entity_id",
+    "optional": true,
     "comment": "this field is the name as it appears in the parent client document"
   }
 ]

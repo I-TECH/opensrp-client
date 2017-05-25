@@ -61,7 +61,7 @@ public class PullUniqueIdsIntentService extends IntentService {
 //            String localUrlString = PathConstants.openmrsUrl() +  PathConstants.OPENMRS_IDGEN_URL + "?source="+PathConstants.OPENMRS_UNIQUE_ID_SOURCE+"&numberToGenerate=" + numberToGenerate + "&username=" + userName + "&password=" + password;
 //           // Convert the incoming data string to a URL.
 //=======
-            String localUrlString = PathConstants.openmrsUrl() + PathConstants.OPENMRS_IDGEN_URL + "?source=" + PathConstants.OPENMRS_UNIQUE_ID_SOURCE + "&numberToGenerate=" + numberToGenerate + "&username=" + "biddemo" + "&password=" + "Linda123";
+            String localUrlString = PathConstants.openmrsUrl() + PathConstants.OPENMRS_IDGEN_URL + "?source=" + PathConstants.OPENMRS_UNIQUE_ID_SOURCE + "&numberToGenerate=" + numberToGenerate + "&username=" + "admin" + "&password=" + "Admin123";
             // Convert the incoming data string to a URL.
 //>>>>>>> 9791ec7f7b876dcc5ff04cdfc79a13c60a3396bc
             localURL = new URL(localUrlString);

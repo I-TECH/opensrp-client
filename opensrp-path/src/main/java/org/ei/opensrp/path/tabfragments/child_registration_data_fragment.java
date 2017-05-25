@@ -66,20 +66,6 @@ public class child_registration_data_fragment extends Fragment {
         this.layout = layout;
         LoadData();
 
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-//        layout.addView(createTableRow(inflater,container,"Catchment Area","Linda"));
-
-
-
-
-        // Inflate the layout for this fragment
         return fragmentview;
     }
 
@@ -96,14 +82,9 @@ public class child_registration_data_fragment extends Fragment {
             WidgetFactory wd = new WidgetFactory();
 
             layout.addView(wd.createTableRow(inflater, container, "Child's home health facility", fixlocationview(JsonFormUtils.getOpenMrsLocationName(Context.getInstance(), Utils.getValue(Detailsmap, "Home_Facility", false)))));
-            layout.addView(wd.createTableRow(inflater, container, "Child's KIP ID", Utils.getValue(childDetails.getColumnmaps(), "zeir_id", false)));
-            layout.addView(wd.createTableRow(inflater, container, "Child's register card number", Utils.getValue(Detailsmap, "Child_Register_Card_Number", false)));
-            layout.addView(wd.createTableRow(inflater, container, "Child's birth certificate number", Utils.getValue(Detailsmap, "Child_Birth_Certificate", false)));
             layout.addView(wd.createTableRow(inflater, container, "First name", Utils.getValue(childDetails.getColumnmaps(), "first_name", true)));
             layout.addView(wd.createTableRow(inflater, container, "Last name", Utils.getValue(childDetails.getColumnmaps(), "last_name", true)));
-            layout.addView(wd.createTableRow(inflater, container, "Sex", Utils.getValue(childDetails.getColumnmaps(), "gender", true)));
             layout.addView(wd.createTableRow(inflater, container, "Child's DOB", ChildDetailTabbedActivity.DATE_FORMAT.format(new DateTime(Utils.getValue(childDetails.getColumnmaps(), "dob", true)).toDate())));
-
 
             String formattedAge = "";
             String dobString = Utils.getValue(childDetails.getColumnmaps(), "dob", false);
@@ -116,16 +97,19 @@ public class child_registration_data_fragment extends Fragment {
                     formattedAge = DateUtils.getDuration(timeDiff);
                 }
             }
-
-
             layout.addView(wd.createTableRow(inflater, container, "Age", formattedAge));
-
-
+            layout.addView(wd.createTableRow(inflater, container, "Gender", Utils.getValue(childDetails.getColumnmaps(), "gender", true)));
+            layout.addView(wd.createTableRow(inflater, container, "Permanent Register number", Utils.getValue(Detailsmap, "Permanent_Register_Number", false)));
+            layout.addView(wd.createTableRow(inflater, container, "Child's KIP ID", Utils.getValue(childDetails.getColumnmaps(), "zeir_id", false)));
+            layout.addView(wd.createTableRow(inflater, container, "NUPI", Utils.getValue(Detailsmap, "National_Unique_Patient_Identifier", false)));
+            layout.addView(wd.createTableRow(inflater, container, "CWC number", Utils.getValue(Detailsmap, "CWC_Number", false)));
+            layout.addView(wd.createTableRow(inflater, container, "HDSS number", Utils.getValue(Detailsmap, "HDSS_Number", false)));
+            layout.addView(wd.createTableRow(inflater, container, "Child's birth notification number", Utils.getValue(Detailsmap, "Child_Birth_Notification", false)));
             layout.addView(wd.createTableRow(inflater, container, "Date first seen", Utils.getValue(Detailsmap, "First_Health_Facility_Contact", true)));
-            layout.addView(wd.createTableRow(inflater, container, "Birth weight", Utils.getValue(Detailsmap, "Birth_Weight", true) + " kg"));
 
             layout.addView(wd.createTableRow(inflater, container, "Mother/guardian first name", (Utils.getValue(childDetails.getColumnmaps(), "mother_first_name", true).isEmpty()?Utils.getValue(childDetails.getDetails(), "mother_first_name", true):Utils.getValue(childDetails.getColumnmaps(), "mother_first_name", true))));
             layout.addView(wd.createTableRow(inflater, container, "Mother/guardian last name",(Utils.getValue(childDetails.getColumnmaps(), "mother_last_name", true).isEmpty() ? Utils.getValue(childDetails.getDetails(), "mother_last_name", true) : Utils.getValue(childDetails.getColumnmaps(), "mother_last_name", true))));
+            layout.addView(wd.createTableRow(inflater, container, "Mother/guardian gender", Utils.getValue(childDetails, "mother_gender", true)));
             String motherDob = Utils.getValue(childDetails, "mother_dob", true);
             if (motherDob != null && motherDob.equals(JsonFormUtils.MOTHER_DEFAULT_DOB)) {
                 motherDob = "";

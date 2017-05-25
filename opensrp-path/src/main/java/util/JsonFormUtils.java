@@ -29,7 +29,6 @@ import org.ei.opensrp.domain.Vaccine;
 import org.ei.opensrp.domain.Weight;
 import org.ei.opensrp.path.R;
 import org.ei.opensrp.path.application.VaccinatorApplication;
-import org.ei.opensrp.path.db.UniqueIdType;
 import org.ei.opensrp.path.repository.BaseRepository;
 import org.ei.opensrp.path.repository.PathRepository;
 import org.ei.opensrp.path.repository.UniqueIdRepository;
@@ -78,6 +77,7 @@ public class JsonFormUtils {
     public static final String OPENMRS_CHOICE_IDS = "openmrs_choice_ids";
     public static final String OPENMRS_DATA_TYPE = "openmrs_data_type";
     public static final String MOTHER_DEFAULT_DOB = "01-01-1960";
+    public static final String FATHER_DEFAULT_DOB = "01-01-1960";
 
     private static final String PERSON_ATTRIBUTE = "person_attribute";
     private static final String PERSON_INDENTIFIER = "person_identifier";
@@ -101,7 +101,6 @@ public class JsonFormUtils {
     public static final  String encounterType = "Update Birth Registration";
     private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static final String OPENMRS_ID = "OPENMRS_ID";
-    public static final String OPENMRS_ID_ = "OpenMRS ID";
 
 
     public static final SimpleDateFormat FORM_DATE = new SimpleDateFormat("dd-MM-yyyy");
@@ -117,7 +116,7 @@ public class JsonFormUtils {
             if(form.getString("encounter_type").equals("Out of Catchment Service")) {
                 saveOutOfAreaService(context, openSrpContext, jsonString);
             } else if (form.getString("encounter_type").equals("Child Enrollment")) {
-                saveBirthRegistration(context, openSrpContext, jsonString, providerId, "Child_Photo", "child", "mother");
+                saveBirthRegistration(context, openSrpContext, jsonString, providerId, "Child_Photo", "child");
             }
         } catch (JSONException e) {
             Log.e(TAG, Log.getStackTraceString(e));
@@ -130,8 +129,7 @@ public class JsonFormUtils {
     }
 
     private static void saveBirthRegistration(Context context, org.ei.opensrp.Context openSrpContext,
-                            String jsonString, String providerId, String imageKey, String bindType,
-                            String subBindType) {
+                            String jsonString, String providerId, String imageKey, String bindType) {
         if (context == null || openSrpContext == null || StringUtils.isBlank(providerId)
                 || StringUtils.isBlank(jsonString)) {
             return;
@@ -163,7 +161,7 @@ public class JsonFormUtils {
                 String key = fields.getJSONObject(i).getString("key");
                 if (key.equals("Home_Facility")
                         || key.equals("Ce_County")|| key.equals("Ce_Sub_County")
-                        || key.equals("Ce_Ward") || key.equals("Ce_Sub_Location")) {
+                        || key.equals("Ce_Ward")) {
                     try {
                         String rawValue = fields.getJSONObject(i).getString("value");
                         JSONArray valueArray = new JSONArray(rawValue);
@@ -179,30 +177,67 @@ public class JsonFormUtils {
                     if(TextUtils.isEmpty(fields.getJSONObject(i).optString("value"))) {
                         fields.getJSONObject(i).put("value", MOTHER_DEFAULT_DOB);
                     }
+                } else if (key.equals("Father_Guardian_Date_Birth")) {
+                    if(TextUtils.isEmpty(fields.getJSONObject(i).optString("value"))) {
+                        fields.getJSONObject(i).put("value", FATHER_DEFAULT_DOB);
+                    }
                 }
             }
 
             Client c = JsonFormUtils.createBaseClient(fields, entityId);
             Event e = JsonFormUtils.createEvent(openSrpContext, fields, metadata, entityId, encounterType, providerId, bindType);
 
-            Client s = null;
+            String relationships = AssetHandler.readFileFromAssetsFolder(FormUtils.ecClientRelationships, context);
+            JSONArray relationshipsArray = new JSONArray(relationships);
 
-            if (StringUtils.isNotBlank(subBindType)) {
-                s = JsonFormUtils.createSubformClient(context, fields, c, subBindType,null);
-            }
+            for (int i = 0; i < relationshipsArray.length(); i++) {
+                Client s = null;
+                Event se = null;
 
-            Event se = null;
-            if (s != null && e != null) {
-                JSONObject subBindTypeJson = getJSONObject(jsonForm, subBindType);
-                if (subBindTypeJson != null) {
-                    String subBindTypeEncounter = getString(subBindTypeJson, ENCOUNTER_TYPE);
-                    if (StringUtils.isNotBlank(subBindTypeEncounter)) {
-                        se = JsonFormUtils.createSubFormEvent(null, metadata, e, s.getBaseEntityId(), subBindTypeEncounter, providerId, subBindType);
+                JSONObject rObject = relationshipsArray.getJSONObject(i);
+                String subBindType = rObject.getString("client_relationship");
+                boolean proceed = true;
 
+                for (int n = 0; n < fields.length(); n++) {
+                    JSONObject field = fields.getJSONObject(n);
+                    if(field.has(ENTITY_ID) && field.getString(ENTITY_ID).equals(subBindType)){
+                        boolean v_required = field.has("v_required") ? field.getJSONObject("v_required").optBoolean("value") : false;
+                        String val = field.getString("value");
+
+                        if(v_required && (val == null || val.isEmpty())){
+                            proceed = false;
+                        }
                     }
                 }
-            }
 
+                if(proceed){
+                    if (StringUtils.isNotBlank(subBindType)) {
+                        s = JsonFormUtils.createSubformClient(context, fields, c, subBindType,null);
+                    }
+
+                    if (s != null && e != null) {
+                        JSONObject subBindTypeJson = getJSONObject(jsonForm, subBindType);
+                        if (subBindTypeJson != null) {
+                            String subBindTypeEncounter = getString(subBindTypeJson, ENCOUNTER_TYPE);
+                            if (StringUtils.isNotBlank(subBindTypeEncounter)) {
+                                se = JsonFormUtils.createSubFormEvent(null, metadata, e, s.getBaseEntityId(), subBindTypeEncounter, providerId, subBindType);
+                            }
+                        }
+                    }
+                }
+
+                if (s != null) {
+                    JSONObject clientJson = new JSONObject(gson.toJson(s));
+
+                    ecUpdater.addClient(s.getBaseEntityId(), clientJson);
+
+                }
+
+                if (se != null) {
+                    JSONObject eventJson = new JSONObject(gson.toJson(se));
+                    ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
+                }
+            }
 
             if (c != null) {
                 JSONObject clientJson = new JSONObject(gson.toJson(c));
@@ -216,22 +251,7 @@ public class JsonFormUtils {
                 ecUpdater.addEvent(e.getBaseEntityId(), eventJson);
             }
 
-            if (s != null) {
-                JSONObject clientJson = new JSONObject(gson.toJson(s));
-
-                ecUpdater.addClient(s.getBaseEntityId(), clientJson);
-
-            }
-
-            if (se != null) {
-                JSONObject eventJson = new JSONObject(gson.toJson(se));
-                ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
-            }
-
-            String kipId = c.getIdentifier(KIP_ID);
-            //mark zeir id as used
-            VaccinatorApplication.getInstance().uniqueIdRepository().close(kipId);
-            VaccinatorApplication.getInstance().uniqueIdRepository().close(c.getIdentifier(OPENMRS_ID_));
+            VaccinatorApplication.getInstance().uniqueIdRepository().close(c.getIdentifier(OPENMRS_ID));
 
             String imageLocation = getFieldValue(fields, imageKey);
             saveImage(context, providerId, entityId, imageLocation);
@@ -1080,7 +1100,7 @@ public class JsonFormUtils {
             c.withAddresses(parent.getAddresses());
         }
 
-        addRelationship(context, c, parent);
+        addRelationship(c, parent, bindType);
 
         return c;
     }
@@ -1195,24 +1215,8 @@ public class JsonFormUtils {
     }
 
 
-    private static void addRelationship(Context context, Client parent, Client child) {
-        try {
-            String relationships = AssetHandler.readFileFromAssetsFolder(FormUtils.ecClientRelationships, context);
-            JSONArray jsonArray = null;
-
-            jsonArray = new JSONArray(relationships);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject rObject = jsonArray.getJSONObject(i);
-                if (rObject.has("field") && getString(rObject, "field").equals(ENTITY_ID)) {
-                    child.addRelationship(rObject.getString("client_relationship"), parent.getBaseEntityId());
-                } else {
-                    //TODO how to add other kind of relationships
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, e.toString(), e);
-        }
+    private static void addRelationship(Client parent, Client child, String bindType) {
+        child.addRelationship(bindType, parent.getBaseEntityId());
     }
 
     private static String getSubFormFieldValue(JSONArray jsonArray, FormEntityConstants.Person person, String bindType) {
@@ -2079,8 +2083,6 @@ public class JsonFormUtils {
                                  String currentLocationId) throws Exception {
         Intent intent = new Intent(context, JsonFormActivity.class);
 
-        String openmrsId = "";
-
         JSONObject form = FormUtils.getInstance(context).getFormJson(formName);
         if (form != null) {
             form.getJSONObject("metadata").put("encounter_location", currentLocationId);
@@ -2088,10 +2090,9 @@ public class JsonFormUtils {
             if (formName.equals("kip_child_enrollment")) {
                 if (StringUtils.isBlank(entityId)) {
                     UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
-                    entityId = uniqueIdRepo.getNextUniqueId(UniqueIdType.KIP_ID) != null ? uniqueIdRepo.getNextUniqueId(UniqueIdType.KIP_ID).getOpenmrsId() : "";
-                    openmrsId = uniqueIdRepo.getNextUniqueId(UniqueIdType.OPENMRS_ID) != null ? uniqueIdRepo.getNextUniqueId(UniqueIdType.OPENMRS_ID).getOpenmrsId() : "";
+                    entityId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
 
-                    if (entityId.isEmpty() || openmrsId.isEmpty()) {
+                    if (entityId.isEmpty()) {
                         Toast.makeText(context, context.getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -2112,10 +2113,6 @@ public class JsonFormUtils {
                         case JsonFormUtils.KIP_ID:
                             jsonObject.remove(JsonFormUtils.VALUE);
                             jsonObject.put(JsonFormUtils.VALUE, entityId);
-                            continue;
-                        case JsonFormUtils.OPENMRS_ID:
-                            jsonObject.remove(JsonFormUtils.VALUE);
-                            jsonObject.put(JsonFormUtils.VALUE, openmrsId);
                             continue;
                         default:
                     }
@@ -2141,10 +2138,6 @@ public class JsonFormUtils {
                         case JsonFormUtils.KIP_ID:
                             jsonObject.remove(JsonFormUtils.VALUE);
                             jsonObject.put(JsonFormUtils.VALUE, entityId);
-                            continue;
-                        case JsonFormUtils.OPENMRS_ID:
-                            jsonObject.remove(JsonFormUtils.VALUE);
-                            jsonObject.put(JsonFormUtils.VALUE, openmrsId);
                             continue;
                         default:
                     }
