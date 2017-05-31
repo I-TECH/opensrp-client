@@ -36,7 +36,8 @@ public class FormEntityConstants {
         birthdate_estimated,
         dead,
         deathdate,
-        deathdate_estimated;
+        deathdate_estimated,
+        full_name;
 
         public String entity(){return "person";}
         public String entityId(){return this.name();}
@@ -55,6 +56,13 @@ public class FormEntityConstants {
         encounter_end;
 
         public String entity(){return "encounter";}
+        public String entityId(){return this.name();}
+    }
+
+    public enum Relationship implements FormEntity{
+        relationship;
+
+        public String entity(){return "relationship";}
         public String entityId(){return this.name();}
     }
 }

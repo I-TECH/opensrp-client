@@ -77,6 +77,7 @@ import org.ei.opensrp.service.formSubmissionHandler.RenewFPProductHandler;
 import org.ei.opensrp.service.formSubmissionHandler.TTHandler;
 import org.ei.opensrp.service.formSubmissionHandler.VitaminAHandler;
 import org.ei.opensrp.sync.SaveANMLocationTask;
+import org.ei.opensrp.sync.SaveRelationshipTypesTask;
 import org.ei.opensrp.sync.SaveUserInfoTask;
 import org.ei.opensrp.util.Cache;
 import org.ei.opensrp.util.Session;
@@ -192,6 +193,7 @@ public class Context {
     private ANCInvestigationsHandler ancInvestigationsHandler;
     private SaveANMLocationTask saveANMLocationTask;
     private SaveUserInfoTask saveUserInfoTask;
+    private SaveRelationshipTypesTask saveRelationshipTypesTask;
 
     private ANMController anmController;
     private ANMLocationController anmLocationController;
@@ -679,9 +681,17 @@ public class Context {
     public UserService userService() {
         if (userService == null) {
             repository = initRepository();
-            userService = new UserService(repository, allSettings(), allSharedPreferences(), httpAgent(), session(), configuration(), saveANMLocationTask(),saveUserInfoTask());
+            userService = new UserService(repository, allSettings(), allSharedPreferences(), httpAgent(), session(), configuration(), saveANMLocationTask(),saveUserInfoTask(),saveRelationshipTypesTask());
         }
         return userService;
+    }
+
+    private SaveRelationshipTypesTask saveRelationshipTypesTask() {
+
+        if (saveRelationshipTypesTask == null) {
+            saveRelationshipTypesTask = new SaveRelationshipTypesTask(allSettings());
+        }
+        return saveRelationshipTypesTask;
     }
 
     private SaveANMLocationTask saveANMLocationTask() {

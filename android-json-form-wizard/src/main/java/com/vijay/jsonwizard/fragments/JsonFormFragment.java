@@ -22,6 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Toast;
 
+import com.rengwuxian.materialedittext.MaterialEditText;
 import com.vijay.jsonwizard.R;
 import com.vijay.jsonwizard.activities.JsonFormActivity;
 import com.vijay.jsonwizard.customviews.RadioButton;
@@ -35,7 +36,10 @@ import com.vijay.jsonwizard.viewstates.JsonFormFragmentViewState;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by vijay on 5/7/15.
@@ -47,6 +51,7 @@ public class JsonFormFragment extends MvpFragment<JsonFormFragmentPresenter, Jso
     private ScrollView          mScrollView;
     private Menu                mMenu;
     private JsonApi             mJsonApi;
+    private Map<String, List<View>> lookUpMap = new HashMap<>();
 
     @Override
     public void onAttach(Activity activity) {
@@ -171,6 +176,17 @@ public class JsonFormFragment extends MvpFragment<JsonFormFragmentPresenter, Jso
     }
 
     @Override
+    public void writeMetaDataValue(String metaDataKey, Map<String, String> values) {
+        Log.d("RealtimeValidation", "Fragment write value called");
+        try {
+            mJsonApi.writeMetaDataValue(metaDataKey, values);
+        } catch (JSONException e) {
+            // TODO - handle
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public JSONObject getStep(String stepName) {
         return mJsonApi.getStep(stepName);
     }
@@ -207,6 +223,7 @@ public class JsonFormFragment extends MvpFragment<JsonFormFragmentPresenter, Jso
             mMainView.addView(view);
         }
         mJsonApi.refreshHiddenViews();
+        mJsonApi.resetFocus();
     }
 
     @Override
@@ -273,15 +290,17 @@ public class JsonFormFragment extends MvpFragment<JsonFormFragmentPresenter, Jso
 
     @Override
     public void scrollToView(final View view) {
-        mScrollView.post(new Runnable() {
-            @Override
-            public void run() {
-                int y = view.getBottom() - 200;
-                if (y < 0) y = 0;
-                mScrollView.scrollTo(0, y);
-                view.requestFocus();
-            }
-        });
+        view.requestFocus();
+        if (!(view instanceof MaterialEditText)) {
+            mScrollView.post(new Runnable() {
+                @Override
+                public void run() {
+                    int y = view.getBottom() - view.getHeight();
+                    if (y < 0) y = 0;
+                    mScrollView.scrollTo(0, y);
+                }
+            });
+        }
     }
 
     @Override
@@ -330,5 +349,13 @@ public class JsonFormFragment extends MvpFragment<JsonFormFragmentPresenter, Jso
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
+    }
+
+    public LinearLayout getMainView() {
+        return mMainView;
+    }
+
+    public Map<String, List<View>> getLookUpMap() {
+        return lookUpMap;
     }
 }

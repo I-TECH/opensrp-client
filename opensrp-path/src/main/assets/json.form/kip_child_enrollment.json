@@ -51,7 +51,11 @@
       "openmrs_data_type": "phonenumber",
       "openmrs_entity_id": "163152AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     },
-    "encounter_location":""
+    "encounter_location":"",
+    "look_up": {
+      "entity_id":"",
+      "value":""
+    }
   },
   "step1": {
     "title": "Child Enrollment",
@@ -145,7 +149,7 @@
       {
         "key": "Permanent_Register_Number",
         "openmrs_entity_parent": "",
-        "openmrs_entity": "person_attribute",
+        "openmrs_entity": "person_identifier",
         "openmrs_entity_id": "PERMANENT_REGISTER_NUMBER",
         "type": "edit_text",
         "hint": "Permanent register number *",
@@ -246,6 +250,7 @@
         "type": "edit_text",
         "hint": "Mother/guardian first name *",
         "edit_type": "name",
+        "look_up": "true",
         "v_required": {
           "value": "true",
           "err": "Please enter the mother/guardian's first name"
@@ -264,6 +269,7 @@
         "type": "edit_text",
         "hint": "Mother/guardian last name *",
         "edit_type": "name",
+        "look_up": "true",
         "v_required": {
           "value": "true",
           "err": "Please enter the mother/guardian's last name"
@@ -299,6 +305,7 @@
         "entity_id": "mother",
         "type": "date_picker",
         "hint": "Mother/guardian DOB",
+        "look_up": "true",
         "expanded": false,
         "duration": {
           "label": "Age"
@@ -307,10 +314,20 @@
         "max_date": "today-10y"
       },
       {
+        "key": "Mother_Guardian_Relationship",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "relationship",
+        "openmrs_entity_id": "relationship",
+        "entity_id": "mother",
+        "type": "spinner",
+        "hint": "Relationship to child *",
+        "values": []
+      },
+      {
         "key": "Mother_Guardian_ID",
         "openmrs_entity_parent": "",
-        "openmrs_entity": "person_attribute",
-        "openmrs_entity_id": "ID_Number",
+        "openmrs_entity": "person_identifier",
+        "openmrs_entity_id": "ID_NUMBER",
         "entity_id": "mother",
         "type": "edit_text",
         "hint": "Mother/guardian ID number",
@@ -338,15 +355,15 @@
       {
         "key": "Father_Guardian_Name",
         "openmrs_entity_parent": "",
-        "openmrs_entity": "concept",
-        "openmrs_entity_id": "1594AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        "openmrs_data_type": "text",
+        "openmrs_entity": "person",
+        "openmrs_entity_id": "full_name",
+        "entity_id": "guardian",
         "type": "edit_text",
         "hint": "Father/guardian full name",
         "edit_type": "name",
         "v_regex": {
-          "value": "[A-Za-z\\s\.\-]*",
-          "err": "Please enter a valid name"
+          "value": "^[A-Za-z\\.\\-]+(?:\\s[A-Za-z\\.\\-]+)+$",
+          "err": "Please enter a valid name e.g. John Doe"
         }
       },
       {
@@ -395,10 +412,26 @@
         }
       },
       {
+        "key": "Father_Guardian_Relationship",
+        "openmrs_entity_parent": "",
+        "openmrs_entity": "relationship",
+        "openmrs_entity_id": "relationship",
+        "entity_id": "guardian",
+        "type": "spinner",
+        "hint": "Relationship to child *",
+        "values": [],
+        "relevance": {
+          "step1:Father_Guardian_Name": {
+            "type": "string",
+            "ex": "regex(., \"^(?=\\s*\\S).*$\")"
+          }
+        }
+      },
+      {
         "key": "Father_Guardian_ID",
         "openmrs_entity_parent": "",
-        "openmrs_entity": "person_attribute",
-        "openmrs_entity_id": "ID_Number",
+        "openmrs_entity": "person_identifier",
+        "openmrs_entity_id": "ID_NUMBER",
         "entity_id": "guardian",
         "type": "edit_text",
         "hint": "Father/guardian ID number",

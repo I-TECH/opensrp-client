@@ -3,7 +3,6 @@ package org.ei.opensrp.path.fragment;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DialogFragment;
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
@@ -24,6 +23,7 @@ import android.widget.TextView;
 
 import com.vijay.jsonwizard.customviews.CheckBox;
 import com.vijay.jsonwizard.customviews.RadioButton;
+import com.vijay.jsonwizard.utils.DatePickerUtils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ei.opensrp.path.R;
@@ -37,6 +37,7 @@ import org.joda.time.DateTime;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import util.ImageUtils;
@@ -45,17 +46,19 @@ import util.ImageUtils;
 public class VaccinationDialogFragment extends DialogFragment {
     private List<VaccineWrapper> tags;
     private VaccinationActionListener listener;
+    private Date dateOfBirth;
     public static final String DIALOG_TAG = "VaccinationDialogFragment";
     public static final String WRAPPER_TAG = "tag";
 
-    public static VaccinationDialogFragment newInstance(
-            ArrayList<VaccineWrapper> tags) {
+    public static VaccinationDialogFragment newInstance(Date dateOfBirth,
+                                                        ArrayList<VaccineWrapper> tags) {
 
         VaccinationDialogFragment vaccinationDialogFragment = new VaccinationDialogFragment();
 
         Bundle args = new Bundle();
         args.putSerializable(WRAPPER_TAG, tags);
         vaccinationDialogFragment.setArguments(args);
+        vaccinationDialogFragment.setDateOfBirth(dateOfBirth);
 
         return vaccinationDialogFragment;
     }
@@ -64,6 +67,10 @@ public class VaccinationDialogFragment extends DialogFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setStyle(DialogFragment.STYLE_NO_TITLE, android.R.style.Theme_Holo_Light_Dialog);
+    }
+
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
     @Override
@@ -279,6 +286,12 @@ public class VaccinationDialogFragment extends DialogFragment {
                 vaccinateEarlier.setVisibility(View.GONE);
                 earlierDatePicker.setVisibility(View.VISIBLE);
                 set.setVisibility(View.VISIBLE);
+
+                // Set the min and max dates
+                earlierDatePicker.setMinDate(dateOfBirth.getTime());
+                earlierDatePicker.setMaxDate(Calendar.getInstance().getTimeInMillis());
+
+                DatePickerUtils.themeDatePicker(earlierDatePicker, new char[]{'d', 'm', 'y'});
             }
         });
 

@@ -23,6 +23,7 @@ import com.rengwuxian.materialedittext.MaterialEditText;
 import com.vijay.jsonwizard.R;
 import com.vijay.jsonwizard.constants.JsonFormConstants;
 import com.vijay.jsonwizard.customviews.CheckBox;
+import com.vijay.jsonwizard.customviews.MaterialSpinner;
 import com.vijay.jsonwizard.customviews.RadioButton;
 import com.vijay.jsonwizard.fragments.JsonFormFragment;
 import com.vijay.jsonwizard.interactors.JsonFormInteractor;
@@ -46,8 +47,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import fr.ganfra.materialspinner.MaterialSpinner;
-
 import static com.vijay.jsonwizard.utils.FormUtils.dpToPixels;
 
 /**
@@ -60,11 +59,17 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
     private JSONObject mStepDetails;
     private String mCurrentKey;
     private String mCurrentPhotoPath;
-    private JsonFormInteractor mJsonFormInteractor = JsonFormInteractor.getInstance();
+    private JsonFormInteractor mJsonFormInteractor;
     private final JsonFormFragment formFragment;
 
     public JsonFormFragmentPresenter(JsonFormFragment formFragment) {
         this.formFragment = formFragment;
+        mJsonFormInteractor = JsonFormInteractor.getInstance();
+    }
+
+    public JsonFormFragmentPresenter(JsonFormFragment formFragment, JsonFormInteractor jsonFormInteractor) {
+        this(formFragment);
+        mJsonFormInteractor = jsonFormInteractor;
     }
 
     public void addFormElements() {
@@ -154,7 +159,8 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
                     getView().writeValue(mStepName, parentKey, childKey, openMrsEntityParent,
                             openMrsEntity, openMrsEntityId);
                 }
-            } else if (childAt instanceof MaterialSpinner) {}
+            } else if (childAt instanceof MaterialSpinner) {
+            }
         }
 
         if (firstError == null) {

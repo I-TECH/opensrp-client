@@ -10,6 +10,7 @@ public class AllSettings {
     private static final String ANM_PASSWORD_PREFERENCE_KEY = "anmPassword";
     private static final String ANM_LOCATION = "anmLocation";
     private static final String USER_INFORMATION = "userInformation";
+    private static final String RELATIONSHIP_TYPES = "relationshipTypes";
 
     protected AllSharedPreferences preferences;
     protected SettingsRepository settingsRepository;
@@ -71,5 +72,13 @@ public class AllSettings {
         authParams.put("username",preferences.fetchRegisteredANM());
         authParams.put("password",fetchANMPassword());
         return  authParams;
+    }
+
+    public String fetchRelationshipTypes() {
+        return settingsRepository.querySetting(RELATIONSHIP_TYPES, "");
+    }
+
+    public void saveRelationshipTypes(String relationshipTypes) {
+        settingsRepository.updateSetting(RELATIONSHIP_TYPES, relationshipTypes);
     }
 }

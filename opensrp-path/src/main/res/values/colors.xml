@@ -5,6 +5,7 @@
     <color name="silver">#A9A9A9</color>
     <color name="light_grey">#CCCCCC</color>
     <color name="dark_grey">#999999</color>
+    <color name="transparent_dark_grey">#EE999999</color>
     <color name="inactive_grey">#B5B5B5</color>
 
     <!-- Gender identity colors -->
@@ -69,5 +70,7 @@
     <color name="record_weight_grey_bg_end">#ebebeb</color>
 
     <color name="transparent_dark_blue">#ff196d99</color>
+
+    <color name="snackbar_background_yellow">#FFED18</color>
 
 </resources>
