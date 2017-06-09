@@ -54,12 +54,16 @@ public class AlertService {
         repository.deleteAllAlertsForEntity(action.caseID());
     }
 
+    public List<Alert> findByEntityId(String entityId) {
+        return repository.findByEntityId(entityId);
+    }
+
     public List<Alert> findByEntityIdAndAlertNames(String entityId, String... names) {
         return repository.findByEntityIdAndAlertNames(entityId, names);
     }
 
-    public List<Alert> findByEntityIdAndOffline(String entityId, boolean offline) {
-        return repository.findByEntityIdAndOffline(entityId, offline);
+    public List<Alert> findByEntityIdAndOffline(String entityId, String... names) {
+        return repository.findOfflineByEntityIdAndName(entityId, names);
     }
 
     public Alert findByEntityIdAndScheduleName(String entityId, String scheduleName) {
@@ -80,6 +84,10 @@ public class AlertService {
         repository.deleteOfflineAlertsForEntity(entityId);
     }
 
+    public void deleteOfflineAlerts(String entityId, String... names) {
+        repository.deleteOfflineAlertsForEntity(entityId, names);
+    }
+
     // FTS methods
     public void updateFtsSearchAfterStatusChange(String entityId, String alertName) {
         try {
@@ -92,8 +100,8 @@ public class AlertService {
                     }
                 }
             }
-        }catch (Exception e){
-           Log.logError(android.util.Log.getStackTraceString(e));
+        } catch (Exception e) {
+            Log.logError(android.util.Log.getStackTraceString(e));
         }
 
     }
@@ -119,7 +127,7 @@ public class AlertService {
                 }
 
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             Log.logError(android.util.Log.getStackTraceString(e));
         }
     }

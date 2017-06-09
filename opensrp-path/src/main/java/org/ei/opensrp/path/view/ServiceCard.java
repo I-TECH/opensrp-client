@@ -14,7 +14,6 @@ import android.widget.TextView;
 import org.ei.opensrp.domain.Alert;
 import org.ei.opensrp.path.R;
 import org.ei.opensrp.path.domain.ServiceWrapper;
-import org.ei.opensrp.path.domain.VaccineWrapper;
 import org.joda.time.DateTime;
 
 import java.text.SimpleDateFormat;
@@ -150,31 +149,29 @@ public class ServiceCard extends LinearLayout {
     }
 
     private void updateStateUi() {
+        setVisibility(VISIBLE);
         switch (state) {
             case NOT_DUE:
-                setBackgroundDrawable(getResources().getDrawable(R.drawable.vaccine_card_background_white));
+                setBackgroundResource(R.drawable.vaccine_card_background_white);
                 statusIV.setVisibility(GONE);
                 undoB.setVisibility(GONE);
                 nameTV.setVisibility(VISIBLE);
                 nameTV.setTextColor(context.getResources().getColor(R.color.silver));
-                nameTV.setText(getVaccineName());
+                nameTV.setText(getServiceName());
                 setClickable(false);
+                setVisibility(GONE);
                 break;
             case DUE:
-                setBackgroundDrawable(getResources().getDrawable(R.drawable.vaccine_card_background_blue));
+                setBackgroundResource(R.drawable.vaccine_card_background_blue);
                 statusIV.setVisibility(GONE);
                 undoB.setVisibility(GONE);
                 nameTV.setVisibility(VISIBLE);
                 nameTV.setTextColor(context.getResources().getColor(android.R.color.white));
-                String vaccineName = getVaccineName();
-                nameTV.setText(String.format(context.getString(R.string.record_), vaccineName));
-                if (vaccineName.toLowerCase().contains("measles") || vaccineName.toLowerCase().contains("mr")) {
-                    nameTV.setText(vaccineName);
-                }
+                nameTV.setText(String.format(context.getString(R.string.record_), getServiceName()));
                 setClickable(true);
                 break;
             case DONE_CAN_BE_UNDONE:
-                setBackgroundDrawable(getResources().getDrawable(R.drawable.vaccine_card_background_white));
+                setBackgroundResource(R.drawable.vaccine_card_background_white);
                 statusIV.setVisibility(VISIBLE);
                 undoB.setVisibility(VISIBLE);
                 nameTV.setVisibility(VISIBLE);
@@ -185,46 +182,46 @@ public class ServiceCard extends LinearLayout {
                     dateFormatToUse = DATE_FORMAT;
                 }
 
-                nameTV.setText(getVaccineName() + " - " + dateFormatToUse.format(getDateDone()));
+                nameTV.setText(getServiceName() + " - " + dateFormatToUse.format(getDateDone()));
                 setClickable(false);
                 break;
             case DONE_CAN_NOT_BE_UNDONE:
-                setBackgroundDrawable(getResources().getDrawable(R.drawable.vaccine_card_background_white));
+                setBackgroundResource(R.drawable.vaccine_card_background_white);
                 statusIV.setVisibility(VISIBLE);
                 undoB.setVisibility(GONE);
                 nameTV.setVisibility(VISIBLE);
                 nameTV.setTextColor(context.getResources().getColor(R.color.silver));
-                nameTV.setText(getVaccineName() + " - " + DATE_FORMAT.format(getDateDone()));
+                nameTV.setText(getServiceName() + " - " + DATE_FORMAT.format(getDateDone()));
                 setClickable(false);
                 break;
             case OVERDUE:
-                setBackgroundDrawable(getResources().getDrawable(R.drawable.vaccine_card_background_red));
+                setBackgroundResource(R.drawable.vaccine_card_background_red);
                 statusIV.setVisibility(GONE);
                 undoB.setVisibility(GONE);
                 nameTV.setVisibility(VISIBLE);
                 nameTV.setTextColor(context.getResources().getColor(android.R.color.white));
-                String vName = getVaccineName();
-                nameTV.setText(String.format(context.getString(R.string.record_due_),
-                        vName, DATE_FORMAT.format(getDateDue())));
-                if (vName.toLowerCase().contains("measles") || vName.toLowerCase().contains("mr")) {
-                    nameTV.setText(String.format(context.getString(R.string.mr_due_),
-                            vName, DATE_FORMAT.format(getDateDue())));
+                String serviceName = getServiceName();
+                if (getDateDue() != null) {
+                    nameTV.setText(String.format(context.getString(R.string.record_due_),
+                            serviceName, DATE_FORMAT.format(getDateDue())));
+                } else {
+                    nameTV.setText(String.format(context.getString(R.string.record_), serviceName));
                 }
                 setClickable(true);
                 break;
             case EXPIRED:
-                setBackgroundDrawable(getResources().getDrawable(R.drawable.vaccine_card_background_white));
+                setBackgroundResource(R.drawable.vaccine_card_background_white);
                 statusIV.setVisibility(GONE);
                 undoB.setVisibility(GONE);
                 nameTV.setVisibility(VISIBLE);
                 nameTV.setTextColor(context.getResources().getColor(R.color.silver));
-                nameTV.setText("Expired: " + getVaccineName());
+                nameTV.setText("Expired: " + getServiceName());
                 setClickable(false);
                 break;
         }
     }
 
-    private String getVaccineName() {
+    private String getServiceName() {
         if (serviceWrapper != null) {
             return serviceWrapper.getName();
         }

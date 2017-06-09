@@ -28,7 +28,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.ei.opensrp.Context;
 import org.ei.opensrp.domain.LoginResponse;
@@ -39,8 +38,8 @@ import org.ei.opensrp.event.Listener;
 import org.ei.opensrp.path.R;
 import org.ei.opensrp.path.application.VaccinatorApplication;
 import org.ei.opensrp.path.service.intent.PullUniqueIdsIntentService;
+import org.ei.opensrp.path.service.intent.ZScoreRefreshIntentService;
 import org.ei.opensrp.repository.AllSharedPreferences;
-import org.ei.opensrp.service.UserService;
 import org.ei.opensrp.sync.DrishtiSyncScheduler;
 import org.ei.opensrp.util.Log;
 import org.ei.opensrp.view.BackgroundAction;
@@ -205,7 +204,7 @@ public class LoginActivity extends Activity {
     private void localLogin(View view, String userName, String password) {
         view.setClickable(true);
         if (context.userService().isUserInValidGroup(userName, password)
-                && TimeStatus.OK.equals(context.userService().validateStoredServerTimeZone())) {
+                && (!PathConstants.TIME_CHECK||TimeStatus.OK.equals(context.userService().validateStoredServerTimeZone()))) {
             localLoginWith(userName, password);
         } else {
             login(findViewById(org.ei.opensrp.R.id.login_loginButton), false);
@@ -220,7 +219,7 @@ public class LoginActivity extends Activity {
                     if (context.userService().isUserInPioneerGroup(userName)) {
                         TimeStatus timeStatus = context.userService().validateDeviceTime(
                                 loginResponse.payload(), PathConstants.MAX_SERVER_TIME_DIFFERENCE);
-                        if (timeStatus.equals(TimeStatus.OK)) {
+                        if (!PathConstants.TIME_CHECK||timeStatus.equals(TimeStatus.OK)) {
                             remoteLoginWith(userName, password, loginResponse.payload());
                             Intent intent = new Intent(appContext, PullUniqueIdsIntentService.class);
                             appContext.startService(intent);
@@ -369,6 +368,7 @@ public class LoginActivity extends Activity {
     private void localLoginWith(String userName, String password) {
         context.userService().localLogin(userName, password);
         goToHome(false);
+        startZScoreIntentService();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -379,9 +379,15 @@ public class LoginActivity extends Activity {
         }).start();
     }
 
+    private void startZScoreIntentService() {
+        Intent intent = new Intent(this, ZScoreRefreshIntentService.class);
+        startService(intent);
+    }
+
     private void remoteLoginWith(String userName, String password, String userInfo) {
         context.userService().remoteLogin(userName, password, userInfo);
         goToHome(true);
+        startZScoreIntentService();
         DrishtiSyncScheduler.startOnlyIfConnectedToNetwork(getApplicationContext());
     }
 

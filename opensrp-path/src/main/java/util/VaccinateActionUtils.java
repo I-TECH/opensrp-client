@@ -14,12 +14,14 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ei.opensrp.clientandeventmodel.DateUtil;
 import org.ei.opensrp.commonregistry.AllCommonsRepository;
 import org.ei.opensrp.commonregistry.CommonFtsObject;
 import org.ei.opensrp.domain.Alert;
 import org.ei.opensrp.domain.AlertStatus;
+import org.ei.opensrp.domain.ServiceType;
 import org.ei.opensrp.domain.Vaccine;
 import org.ei.opensrp.domain.form.FormSubmission;
 import org.ei.opensrp.path.R;
@@ -35,7 +37,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -160,7 +164,7 @@ public class VaccinateActionUtils {
                     ft.addToBackStack(null);
                     ArrayList<VaccineWrapper> list = new ArrayList<VaccineWrapper>();
                     list.add(tag);
-                    VaccinationDialogFragment vaccinationDialogFragment = VaccinationDialogFragment.newInstance(null, list);
+                    VaccinationDialogFragment vaccinationDialogFragment = VaccinationDialogFragment.newInstance(null, null, list);
                     vaccinationDialogFragment.show(ft, VaccinationDialogFragment.DIALOG_TAG);
 
                 }
@@ -341,8 +345,8 @@ public class VaccinateActionUtils {
         if (vaccine == null) {
             return null;
         } else {
-            String stateKey =  stateKey(vaccine);
-            if(stateKey.equals( "at birth")){
+            String stateKey = stateKey(vaccine);
+            if (stateKey.equals("at birth")) {
                 stateKey = "Birth";
             }
             return stateKey;
@@ -366,6 +370,39 @@ public class VaccinateActionUtils {
             return names.toArray(new String[names.size()]);
         }
         return null;
+    }
+
+    public static String[] allAlertNames(Collection<List<ServiceType>> typeList) {
+        if (typeList == null) {
+            return null;
+        }
+
+        List<String> names = new ArrayList<>();
+
+        for (List<ServiceType> serviceTypes : typeList) {
+            if (serviceTypes != null) {
+                String[] array = allAlertNames(serviceTypes);
+                if (array != null) {
+                    names.addAll(Arrays.asList(array));
+                }
+            }
+        }
+
+        return names.toArray(new String[names.size()]);
+    }
+
+    public static String[] allAlertNames(List<ServiceType> list) {
+        if (list == null) {
+            return null;
+        }
+
+        List<String> names = new ArrayList<>();
+
+        for (ServiceType serviceType : list) {
+            names.add(serviceType.getName().toLowerCase().replaceAll("\\s+", ""));
+            names.add(serviceType.getName());
+        }
+        return names.toArray(new String[names.size()]);
     }
 
     public static String addHyphen(String s) {
@@ -444,6 +481,19 @@ public class VaccinateActionUtils {
             }
         }
         return false;
+    }
+
+    public static Vaccine getVaccine(List<Vaccine> vaccineList, VaccineRepo.Vaccine v) {
+        if (vaccineList == null || vaccineList.isEmpty() || v == null) {
+            return null;
+        }
+
+        for (Vaccine vaccine : vaccineList) {
+            if (vaccine.getName().equalsIgnoreCase(v.display().toLowerCase())) {
+                return vaccine;
+            }
+        }
+        return null;
     }
 
     public static Alert createDefaultAlert(VaccineRepo.Vaccine vaccine, String entityId, DateTime birthDateTime) {

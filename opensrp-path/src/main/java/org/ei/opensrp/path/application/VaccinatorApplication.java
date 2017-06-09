@@ -21,9 +21,12 @@ import org.ei.opensrp.path.domain.VaccineSchedule;
 import org.ei.opensrp.path.receiver.PathSyncBroadcastReceiver;
 import org.ei.opensrp.path.receiver.SyncStatusBroadcastReceiver;
 import org.ei.opensrp.path.repository.PathRepository;
+import org.ei.opensrp.path.repository.RecurringServiceRecordRepository;
+import org.ei.opensrp.path.repository.RecurringServiceTypeRepository;
 import org.ei.opensrp.path.repository.UniqueIdRepository;
 import org.ei.opensrp.path.repository.VaccineRepository;
 import org.ei.opensrp.path.repository.WeightRepository;
+import org.ei.opensrp.path.repository.ZScoreRepository;
 import org.ei.opensrp.repository.Repository;
 import org.ei.opensrp.sync.DrishtiSyncScheduler;
 import org.ei.opensrp.view.activity.DrishtiApplication;
@@ -55,6 +58,9 @@ public class VaccinatorApplication extends DrishtiApplication
     private WeightRepository weightRepository;
     private UniqueIdRepository uniqueIdRepository;
     private VaccineRepository vaccineRepository;
+    private ZScoreRepository zScoreRepository;
+    private RecurringServiceRecordRepository recurringServiceRecordRepository;
+    private RecurringServiceTypeRepository recurringServiceTypeRepository;
     private boolean lastModified;
 
     @Override
@@ -140,7 +146,7 @@ public class VaccinatorApplication extends DrishtiApplication
         return null;
     }
 
-    private static String[] getFtsSortFields(String tableName){
+    private static String[] getFtsSortFields(String tableName) {
 
 
         if (tableName.equals("ec_child")) {
@@ -154,7 +160,7 @@ public class VaccinatorApplication extends DrishtiApplication
             names.add("lost_to_follow_up");
 
             for (VaccineRepo.Vaccine vaccine : vaccines) {
-                names.add( "alerts." + VaccinateActionUtils.addHyphen(vaccine.display()));
+                names.add("alerts." + VaccinateActionUtils.addHyphen(vaccine.display()));
             }
 
             return names.toArray(new String[names.size()]);
@@ -220,6 +226,8 @@ public class VaccinatorApplication extends DrishtiApplication
             weightRepository();
             vaccineRepository();
             uniqueIdRepository();
+            recurringServiceTypeRepository();
+            recurringServiceRecordRepository();
         }
         return repository;
     }
@@ -243,11 +251,33 @@ public class VaccinatorApplication extends DrishtiApplication
         return vaccineRepository;
     }
 
+    public ZScoreRepository zScoreRepository() {
+        if (zScoreRepository == null) {
+            zScoreRepository = new ZScoreRepository((PathRepository) getRepository());
+        }
+
+        return zScoreRepository;
+    }
+
     public UniqueIdRepository uniqueIdRepository() {
         if (uniqueIdRepository == null) {
             uniqueIdRepository = new UniqueIdRepository((PathRepository) getRepository());
         }
         return uniqueIdRepository;
+    }
+
+    public RecurringServiceTypeRepository recurringServiceTypeRepository() {
+        if (recurringServiceTypeRepository == null) {
+            recurringServiceTypeRepository = new RecurringServiceTypeRepository((PathRepository) getRepository());
+        }
+        return recurringServiceTypeRepository;
+    }
+
+    public RecurringServiceRecordRepository recurringServiceRecordRepository() {
+        if (recurringServiceRecordRepository == null) {
+            recurringServiceRecordRepository = new RecurringServiceRecordRepository((PathRepository) getRepository());
+        }
+        return recurringServiceRecordRepository;
     }
 
     public boolean isLastModified() {
@@ -275,7 +305,8 @@ public class VaccinatorApplication extends DrishtiApplication
     private void initOfflineSchedules() {
         try {
             JSONArray childVaccines = new JSONArray(VaccinatorUtils.getSupportedVaccines(this));
-            VaccineSchedule.init(childVaccines, "child");
+            JSONArray specialVaccines = new JSONArray(VaccinatorUtils.getSpecialVaccines(this));
+            VaccineSchedule.init(childVaccines, specialVaccines, "child");
         } catch (Exception e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
