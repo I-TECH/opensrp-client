@@ -415,6 +415,7 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
             LocationPickerView lpv = new LocationPickerView(getApplicationContext());
             lpv.init(context);
             JsonFormUtils.addChildRegLocHierarchyQuestions(form, context);
+            JsonFormUtils.addRelationshipTypesQuestions(form, context);
             Log.d(TAG, "Form is "+form.toString());
             if (form != null) {
                 form.put(JsonFormUtils.ENTITY_ID, childDetails.entityId());
@@ -427,27 +428,62 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
                 JSONObject stepOne = form.getJSONObject(JsonFormUtils.STEP1);
                 JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
                 for (int i = 0; i < jsonArray.length(); i++) {
+
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Home_Facility")) {
+                        JSONArray homeFacilityHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(
+                                getOpenSRPContext(), Utils.getValue(detailmaps,
+                                        "Home_Facility", true));
+                        if (homeFacilityHierarchy != null) {
+                            jsonObject.put(JsonFormUtils.VALUE, homeFacilityHierarchy.toString());
+                        }
+                    }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("First_Name")) {
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "first_name", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Last_Name")) {
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "last_name", true));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Sex")) {
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Date_Birth")) {
+                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
+                        DateTime dateTime = new DateTime(Utils.getValue(childDetails.getColumnmaps(), "dob", true));
+                        Date dob = dateTime.toDate();
+                        jsonObject.put(JsonFormUtils.VALUE, DATE_FORMAT.format(dob));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Gender")) {
                         jsonObject.put(JsonFormUtils.READ_ONLY, true);
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "gender", true));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Permanent_Register_Number")) {
+                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "epi_card_number", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase(JsonFormUtils.KIP_ID)) {
                         jsonObject.put(JsonFormUtils.READ_ONLY, true);
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "zeir_id", true).replace("-", ""));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Child_Register_Card_Number")) {
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Child_Register_Card_Number", true));
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("National_Unique_Patient_Identifier")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "nupi_number", true));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Child_Birth_Certificate")) {
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("CWC_Number")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "cwc_number", true));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("HDSS_Number")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "hdss_number", true));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Child_Birth_Notification")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Child_Birth_Notification", true));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("First_Health_Facility_Contact")) {
                         jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Child_Birth_Certificate", true));
+                        String dateString = Utils.getValue(detailmaps, "First_Health_Facility_Contact", false);
+                        if (!TextUtils.isEmpty(dateString)) {
+                            Date date = JsonFormUtils.formatDate(dateString, false);
+                            if (date != null) {
+                                jsonObject.put(JsonFormUtils.VALUE, DATE_FORMAT.format(date));
+                            }
+                        }
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Mother_Guardian_First_Name")) {
                         jsonObject.put(JsonFormUtils.VALUE, (Utils.getValue(childDetails.getColumnmaps(), "mother_first_name", true).isEmpty()?Utils.getValue(childDetails.getDetails(), "mother_first_name", true):Utils.getValue(childDetails.getColumnmaps(), "mother_first_name", true)));
@@ -471,97 +507,102 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
                             }
                         }
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Mother_Guardian_NRC")) {
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "mother_nrc_number", true));
+                    // Mother relationship type
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Mother_Guardian_Relationship")) {
+                        jsonObject.put(JsonFormUtils.VALUE, JsonFormUtils.getRelationshipType(Context.getInstance(), Utils.getValue(childDetails.getColumnmaps(), "m_relationship_type", true)));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Mother_Guardian_ID")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "mother_id_number", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Mother_Guardian_Number")) {
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Mother_Guardian_Number", true));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_Name")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Father_Guardian_Name", true));
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_NRC")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Father_NRC_Number", true));
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("First_Health_Facility_Contact")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        String dateString = Utils.getValue(detailmaps, "First_Health_Facility_Contact", false);
-                        if (!TextUtils.isEmpty(dateString)) {
-                            Date date = JsonFormUtils.formatDate(dateString, false);
-                            if (date != null) {
-                                jsonObject.put(JsonFormUtils.VALUE, DATE_FORMAT.format(date));
+                    String guardianName = Utils.getValue(childDetails.getColumnmaps(), "guardian_name", true);
+                    if(StringUtils.isNotBlank(guardianName)){
+                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_Name")) {
+                            jsonObject.put(JsonFormUtils.VALUE, guardianName);
+                        }
+                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_Gender")) {
+                            jsonObject.put(JsonFormUtils.READ_ONLY, true);
+                            jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "guardian_gender", true));
+                        }
+                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_Date_Birth")) {
+
+                            if (!TextUtils.isEmpty(Utils.getValue(childDetails.getColumnmaps(), "guardian_dob", true))) {
+                                try {
+                                    DateTime dateTime = new DateTime(Utils.getValue(childDetails.getColumnmaps(), "guardian_dob", true));
+                                    Date dob = dateTime.toDate();
+                                    Date defaultDate = DATE_FORMAT.parse(JsonFormUtils.FATHER_DEFAULT_DOB);
+                                    long timeDiff = Math.abs(dob.getTime() - defaultDate.getTime());
+                                    if (timeDiff > 86400000) {// Guardian's date of birth occurs more than a day from the default date
+                                        jsonObject.put(JsonFormUtils.VALUE, DATE_FORMAT.format(dob));
+                                    }
+                                } catch (Exception e) {
+                                }
                             }
                         }
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Date_Birth")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        DateTime dateTime = new DateTime(Utils.getValue(childDetails.getColumnmaps(), "dob", true));
-                        Date dob = dateTime.toDate();
-                        jsonObject.put(JsonFormUtils.VALUE, DATE_FORMAT.format(dob));
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Birth_Weight")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Birth_Weight", true));
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Place_Birth")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-
-                        String placeofnearth_Choice = Utils.getValue(detailmaps,"Place_Birth",true);
-                        if(placeofnearth_Choice.equalsIgnoreCase("Health facility")){
-                            placeofnearth_Choice = "Health facility";
+                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_Relationship")) {
+                            jsonObject.put(JsonFormUtils.VALUE, JsonFormUtils.getRelationshipType(Context.getInstance(), Utils.getValue(childDetails.getColumnmaps(), "g_relationship_type", true)));
                         }
-                        if(placeofnearth_Choice.equalsIgnoreCase("Home")){
-                            placeofnearth_Choice = "Home";
+                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Father_Guardian_ID")) {
+                            jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "guardian_id_number", true));
                         }
-                        jsonObject.put(JsonFormUtils.VALUE, placeofnearth_Choice);
-
-//                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Place_Birth", true));
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Birth_Facility_Name")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        JSONArray birthFacilityHierarchy = null;
-                        String birthFacilityName =Utils.getValue(detailmaps, "Birth_Facility_Name", false);
-
-                        if(birthFacilityName != null && birthFacilityName.equalsIgnoreCase("other")) {
-                            birthFacilityHierarchy = new JSONArray();
-                            birthFacilityHierarchy.put(birthFacilityName);
-                        } else {
-                            birthFacilityHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(
-                                    getOpenSRPContext(), birthFacilityName);
-                        }
-
-                        if (birthFacilityHierarchy != null) {
-                            jsonObject.put(JsonFormUtils.VALUE, birthFacilityHierarchy.toString());
-                        }
-                    }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Birth_Facility_Name_Other")) {
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "Birth_Facility_Name_Other", false));
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Residential_Area")) {
-                        JSONArray residentialAreaHierarchy = null;
-                        String address3 = Utils.getValue(detailmaps, "address3", false);
-                        if (address3 != null && address3.equalsIgnoreCase("Other")) {
+
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_County")) {
+                        JSONArray residentialAreaHierarchy;
+                        String stateProvince = Utils.getValue(detailmaps, "stateProvince", false);
+                        if (stateProvince != null && stateProvince.equalsIgnoreCase("Other")) {
                             residentialAreaHierarchy = new JSONArray();
-                            residentialAreaHierarchy.put(address3);
+                            residentialAreaHierarchy.put(stateProvince);
                         } else {
-                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(
-                                    getOpenSRPContext(), address3);
+                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(getOpenSRPContext(), stateProvince);
                         }
 
                         if (residentialAreaHierarchy != null) {
                             jsonObject.put(JsonFormUtils.VALUE, residentialAreaHierarchy.toString());
                         }
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Residential_Area_Other")) {
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "address5", true));
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Sub_County")) {
+                        JSONArray residentialAreaHierarchy;
+                        String countyDistrict = Utils.getValue(detailmaps, "countyDistrict", false);
+                        if (countyDistrict != null && countyDistrict.equalsIgnoreCase("Other")) {
+                            residentialAreaHierarchy = new JSONArray();
+                            residentialAreaHierarchy.put(countyDistrict);
+                        } else {
+                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(getOpenSRPContext(), countyDistrict);
+                        }
+
+                        if (residentialAreaHierarchy != null) {
+                            jsonObject.put(JsonFormUtils.VALUE, residentialAreaHierarchy.toString());
+                        }
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Residential_Address")) {
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Ward")) {
+                        JSONArray residentialAreaHierarchy;
+                        String cityVillage = Utils.getValue(detailmaps, "cityVillage", false);
+                        if (cityVillage != null && cityVillage.equalsIgnoreCase("Other")) {
+                            residentialAreaHierarchy = new JSONArray();
+                            residentialAreaHierarchy.put(cityVillage);
+                        } else {
+                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(getOpenSRPContext(), cityVillage);
+                        }
+
+                        if (residentialAreaHierarchy != null) {
+                            jsonObject.put(JsonFormUtils.VALUE, residentialAreaHierarchy.toString());
+                        }
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Sub_Location")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "address4", true));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Village")) {
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "address3", true));
+                    }
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Landmark")) {
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "address2", true));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Physical_Landmark")) {
+                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Address")) {
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "address1", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("CHW_Name")) {
@@ -572,17 +613,8 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("PMTCT_Status")) {
                         jsonObject.put(JsonFormUtils.READ_ONLY, true);
-                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "PMTCT_Status", true));
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "pmtct_status", true));
                     }
-                    if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Home_Facility")) {
-                        JSONArray homeFacilityHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(
-                                getOpenSRPContext(), Utils.getValue(detailmaps,
-                                        "Home_Facility", true));
-                        if (homeFacilityHierarchy != null) {
-                            jsonObject.put(JsonFormUtils.VALUE, homeFacilityHierarchy.toString());
-                        }
-                    }
-
                 }
 //            intent.putExtra("json", form.toString());
 //            startActivityForResult(intent, REQUEST_CODE_GET_JSON);

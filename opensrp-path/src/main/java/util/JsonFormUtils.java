@@ -104,6 +104,11 @@ public class JsonFormUtils {
     public static final String encounterType = "Update Birth Registration";
     private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static final String OPENMRS_ID = "OPENMRS_ID";
+    /*
+    There are some UUIDs shared across all OpenMRS implementations for metadata that are common across all implementations.
+    This @UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID is the UUID for relationship type "Parent/Child"
+     */
+    public static final String UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID = "8d91a210-c2cc-11de-8d13-0010c6dffd0f";
 
     public static final SimpleDateFormat dd_MM_yyyy = new SimpleDateFormat("dd-MM-yyyy");
     //public static Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
@@ -200,6 +205,7 @@ public class JsonFormUtils {
 
             String relationships = AssetHandler.readFileFromAssetsFolder(FormUtils.ecClientRelationships, context);
             JSONArray relationshipsArray = new JSONArray(relationships);
+            List<String> usedIds = new ArrayList<>();
 
             for (int i = 0; i < relationshipsArray.length(); i++) {
                 Client s = null;
@@ -229,6 +235,7 @@ public class JsonFormUtils {
                 if (proceed && s == null) {
                     if (StringUtils.isNotBlank(subBindType)) {
                         s = JsonFormUtils.createSubformClient(context, openSrpContext, fields, c, subBindType, null);
+                        usedIds.add(s.getIdentifier(OPENMRS_ID));
                     }
 
                     if (s != null && e != null) {
@@ -268,8 +275,13 @@ public class JsonFormUtils {
             }
 
             String openmrsId = c.getIdentifier(OPENMRS_ID);
-
-            VaccinatorApplication.getInstance().uniqueIdRepository().close(openmrsId);
+            UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
+            uniqueIdRepo.close(openmrsId);
+            if(usedIds != null && usedIds.size() > 0){
+                for(String s: usedIds){
+                    uniqueIdRepo.close(s);
+                }
+            }
 
             String imageLocation = getFieldValue(fields, imageKey);
             saveImage(context, providerId, entityId, imageLocation);
@@ -1122,10 +1134,20 @@ public class JsonFormUtils {
         String bb = getSubFormFieldValue(fields, FormEntityConstants.Person.birthdate, bindType);
 
         Map<String, String> idents = extractIdentifiers(fields, bindType);
-        String parentIdentifier = parent.getIdentifier(KIP_ID);
+        String parentIdentifier = parent.getIdentifier(OPENMRS_ID);
         if (StringUtils.isNotBlank(parentIdentifier)) {
             String identifier = parentIdentifier.concat("_").concat(bindType);
             idents.put(M_KIP_ID, identifier);
+        }
+
+        UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
+        String openMrsId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
+
+        if (openMrsId.isEmpty()) {
+            Toast.makeText(context, context.getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
+            return null;
+        } else {
+            idents.put(OPENMRS_ID, openMrsId);
         }
 
         String middleName = getSubFormFieldValue(fields, FormEntityConstants.Person.middle_name, bindType);
@@ -1194,22 +1216,56 @@ public class JsonFormUtils {
     private static String getRelationshipTypeId(org.ei.opensrp.Context openSrpContext, JSONArray fields, String bindType) {
         String relationshipType = getSubFormFieldValue(fields, FormEntityConstants.Relationship.relationship, bindType);
 
+        if(StringUtils.isBlank(relationshipType))
+            return JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID;
+
         JSONArray relationshipTypes;
+        JSONObject rType;
         String relationshipTypeId = "";
         try {
             relationshipTypes = new JSONObject(openSrpContext.allSettings().fetchRelationshipTypes()).getJSONArray("relationshipTypes");
 
-            for(int n = 0; n<relationshipTypes.length(); n++){
-                JSONObject rType = new JSONObject(relationshipTypes.getString(n));
-                if(rType.has("name") && rType.getString("name").equals(relationshipType)){
-                    relationshipTypeId = rType.getString("key");
+            if(relationshipTypes != null && relationshipTypes.length() > 0) {
+                for (int n = 0; n < relationshipTypes.length(); n++) {
+                    rType = new JSONObject(relationshipTypes.getString(n));
+                    if (rType.has("name") && rType.getString("name").equals(relationshipType)) {
+                        relationshipTypeId = rType.getString("key");
+                    }
                 }
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
+        if(StringUtils.isBlank(relationshipTypeId)){
+            //return the universal for parent/child
+            relationshipTypeId = JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID;
+        }
+
         return relationshipTypeId;
+    }
+
+    public static String getRelationshipType(org.ei.opensrp.Context openSrpContext, String relationshipTypeId) {
+        JSONArray relationshipTypes;
+        JSONObject rType;
+        String relationshipType = "";
+        try {
+            relationshipTypes = new JSONObject(openSrpContext.allSettings().fetchRelationshipTypes()).getJSONArray("relationshipTypes");
+
+            if(relationshipTypes != null && relationshipTypes.length() > 0) {
+                for (int n = 0; n < relationshipTypes.length(); n++) {
+                    rType = new JSONObject(relationshipTypes.getString(n));
+                    if (rType.has("key") && rType.getString("key").equals(relationshipTypeId)){
+                        relationshipType = rType.has("name") ? rType.getString("name") : "";
+                        break;
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return relationshipType;
     }
 
     public static JSONObject merge(JSONObject original, JSONObject updated) {
@@ -2316,7 +2372,8 @@ public class JsonFormUtils {
                     UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
                     entityId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
 
-                    if (entityId.isEmpty()) {
+                    if (entityId.isEmpty() || uniqueIdRepo.countUnUsedIds() < 3) {
+                        // If entityId is empty or if unused < 3, to cater for child, mother & guardian
                         Toast.makeText(context, context.getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -2376,7 +2433,12 @@ public class JsonFormUtils {
         }
     }
 
-    private static void addRelationshipTypesQuestions(JSONObject form, org.ei.opensrp.Context context) {
+    /**
+     * Popul
+     * @param form
+     * @param context
+     */
+    public static void addRelationshipTypesQuestions(JSONObject form, org.ei.opensrp.Context context) {
         try {
             JSONArray questions = form.getJSONObject("step1").getJSONArray("fields");
             JSONArray relationshipTypes = new JSONObject(context.allSettings().fetchRelationshipTypes()).getJSONArray("relationshipTypes");
@@ -2386,20 +2448,23 @@ public class JsonFormUtils {
                         || questions.getJSONObject(i).getString("key").equals("Father_Guardian_Relationship")) {
 
                     JSONArray values = new JSONArray();
-                    JSONObject openmrsChoiceIds = new JSONObject();
+                    String value = "";
 
-                    for(int n = 0; n<relationshipTypes.length(); n++){
-                        JSONObject rType = new JSONObject(relationshipTypes.getString(n));
-                        values.put(rType.getString("name"));
-                        openmrsChoiceIds.put(rType.getString("name"), rType.getString("key"));
+                    if(relationshipTypes != null && relationshipTypes.length()>0) {
+                        for (int n = 0; n < relationshipTypes.length(); n++) {
+                            JSONObject rType = new JSONObject(relationshipTypes.getString(n));
+                            values.put(rType.getString("name"));
+                            if(rType.has("key") && rType.get("key").equals(JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID)){
+                                value = rType.getString("name");
+                            }
+                        }
                     }
 
                     questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
                     questions.getJSONObject(i).put(JsonFormUtils.VALUES, values);
-
-                    questions.getJSONObject(i).remove(JsonFormUtils.OPENMRS_CHOICE_IDS);
-                    questions.getJSONObject(i).put(JsonFormUtils.OPENMRS_CHOICE_IDS, openmrsChoiceIds);
-                    //questions.getJSONObject(i).put("value", new JSONObject(relationshipTypes.getString(0)));
+                    // Set the default relationship type.
+                    questions.getJSONObject(i).remove(JsonFormUtils.VALUE);
+                    questions.getJSONObject(i).put(JsonFormUtils.VALUE, value);
                 }
             }
         } catch (JSONException e) {
