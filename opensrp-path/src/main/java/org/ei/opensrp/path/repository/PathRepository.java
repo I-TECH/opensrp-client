@@ -69,6 +69,7 @@ public class PathRepository extends Repository {
         UniqueIdRepository.createTable(database);
         WeightRepository.createTable(database);
         VaccineRepository.createTable(database);
+        LocationRepository.createTable(database);
         onUpgrade(database, 1, PathConstants.DATABASE_VERSION);
 
     }

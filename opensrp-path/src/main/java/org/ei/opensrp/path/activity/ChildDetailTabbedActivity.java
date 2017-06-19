@@ -558,46 +558,13 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
 
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_County")) {
-                        JSONArray residentialAreaHierarchy;
-                        String stateProvince = Utils.getValue(detailmaps, "stateProvince", false);
-                        if (stateProvince != null && stateProvince.equalsIgnoreCase("Other")) {
-                            residentialAreaHierarchy = new JSONArray();
-                            residentialAreaHierarchy.put(stateProvince);
-                        } else {
-                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(getOpenSRPContext(), stateProvince);
-                        }
-
-                        if (residentialAreaHierarchy != null) {
-                            jsonObject.put(JsonFormUtils.VALUE, residentialAreaHierarchy.toString());
-                        }
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "stateProvince", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Sub_County")) {
-                        JSONArray residentialAreaHierarchy;
-                        String countyDistrict = Utils.getValue(detailmaps, "countyDistrict", false);
-                        if (countyDistrict != null && countyDistrict.equalsIgnoreCase("Other")) {
-                            residentialAreaHierarchy = new JSONArray();
-                            residentialAreaHierarchy.put(countyDistrict);
-                        } else {
-                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(getOpenSRPContext(), countyDistrict);
-                        }
-
-                        if (residentialAreaHierarchy != null) {
-                            jsonObject.put(JsonFormUtils.VALUE, residentialAreaHierarchy.toString());
-                        }
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "countyDistrict", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Ward")) {
-                        JSONArray residentialAreaHierarchy;
-                        String cityVillage = Utils.getValue(detailmaps, "cityVillage", false);
-                        if (cityVillage != null && cityVillage.equalsIgnoreCase("Other")) {
-                            residentialAreaHierarchy = new JSONArray();
-                            residentialAreaHierarchy.put(cityVillage);
-                        } else {
-                            residentialAreaHierarchy = JsonFormUtils.getOpenMrsLocationHierarchy(getOpenSRPContext(), cityVillage);
-                        }
-
-                        if (residentialAreaHierarchy != null) {
-                            jsonObject.put(JsonFormUtils.VALUE, residentialAreaHierarchy.toString());
-                        }
+                        jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "cityVillage", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("Ce_Sub_Location")) {
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "address4", true));
@@ -618,7 +585,6 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(detailmaps, "CHW_Phone_Number", true));
                     }
                     if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase("PMTCT_Status")) {
-                        jsonObject.put(JsonFormUtils.READ_ONLY, true);
                         jsonObject.put(JsonFormUtils.VALUE, Utils.getValue(childDetails.getColumnmaps(), "pmtct_status", true));
                     }
                 }

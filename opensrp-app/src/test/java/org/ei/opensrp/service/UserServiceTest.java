@@ -3,8 +3,6 @@ package org.ei.opensrp.service;
 import org.ei.opensrp.repository.*;
 import org.ei.opensrp.sync.SaveRelationshipTypesTask;
 import org.ei.opensrp.sync.SaveUserInfoTask;
-import org.json.JSONObject;
-import org.mockito.Spy;
 import org.opensrp.api.domain.Location;
 import org.opensrp.api.domain.User;
 import org.opensrp.api.util.EntityUtils;

@@ -284,6 +284,8 @@ public class ChildSmartRegisterFragment extends BaseSmartRegisterFragment implem
     public void initializeQueries() {
         String tableName = "ec_child";
         String parentTableName = "ec_mother";
+        String motherAlias = "m";
+        String guardianAlias = "g";
 
         ChildSmartClientsProvider hhscp = new ChildSmartClientsProvider(getActivity(),
                 clientActionHandler, context().alertService(), VaccinatorApplication.getInstance().vaccineRepository(), VaccinatorApplication.getInstance().weightRepository());
@@ -308,11 +310,15 @@ public class ChildSmartRegisterFragment extends BaseSmartRegisterFragment implem
                 tableName + ".first_name",
                 tableName + ".last_name",
                 tableName + ".gender",
-                parentTableName + ".first_name as mother_first_name",
-                parentTableName + ".last_name as mother_last_name",
-                parentTableName + ".dob as mother_dob",
-                parentTableName + ".nrc_number as mother_nrc_number",
-                tableName + ".father_name",
+                motherAlias + ".first_name as mother_first_name",
+                motherAlias + ".last_name as mother_last_name",
+                motherAlias + ".dob as mother_dob",
+                motherAlias + ".nrc_number as mother_id_number",
+                motherAlias + ".gender as mother_gender",
+                guardianAlias + ".first_name || ' ' || "+ guardianAlias + ".last_name as guardian_name",
+                guardianAlias + ".dob as guardian_dob",
+                guardianAlias + ".nrc_number as guardian_id_number",
+                guardianAlias + ".gender as guardian_gender",
                 tableName + ".dob",
                 tableName + ".epi_card_number",
                 tableName + ".contact_phone_number",
@@ -326,7 +332,8 @@ public class ChildSmartRegisterFragment extends BaseSmartRegisterFragment implem
                 tableName + ".inactive",
                 tableName + ".lost_to_follow_up"
         });
-        queryBUilder.customJoin("LEFT JOIN " + parentTableName + " ON  " + tableName + ".relational_id =  " + parentTableName + ".id");
+        queryBUilder.customJoin("LEFT JOIN " + parentTableName + " " + motherAlias + " ON  " + tableName + ".relational_id =  " + motherAlias + ".id");
+        queryBUilder.customJoin("LEFT JOIN " + parentTableName + " " + guardianAlias + " ON  " + tableName + ".g_relational_id =  " + guardianAlias + ".id");
         mainSelect = queryBUilder.mainCondition("");
         Sortqueries = ((CursorSortOption) getDefaultOptionsProvider().sortOption()).sort();
 

@@ -31,6 +31,7 @@ import org.ei.opensrp.path.application.VaccinatorApplication;
 import org.ei.opensrp.path.db.Address;
 import org.ei.opensrp.path.db.Client;
 import org.ei.opensrp.path.repository.BaseRepository;
+import org.ei.opensrp.path.repository.LocationRepository;
 import org.ei.opensrp.path.repository.PathRepository;
 import org.ei.opensrp.path.repository.UniqueIdRepository;
 import org.ei.opensrp.path.repository.VaccineRepository;
@@ -46,6 +47,7 @@ import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opensrp.api.domain.Location;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -124,7 +126,7 @@ public class JsonFormUtils {
             if (form.getString("encounter_type").equals("Out of Catchment Service")) {
                 saveOutOfAreaService(context, openSrpContext, jsonString);
             } else if (form.getString("encounter_type").equals("Child Enrollment")) {
-                saveBirthRegistration(context, openSrpContext, jsonString, providerId, "Child_Photo", "child");
+                saveChildEnrollment(context, openSrpContext, jsonString, providerId, "Child_Photo", "child");
             }
         } catch (JSONException e) {
             Log.e(TAG, Log.getStackTraceString(e));
@@ -137,8 +139,8 @@ public class JsonFormUtils {
                 new SaveAdverseEventTask(jsonString, locationId, baseEntityId, providerId), null);
     }
 
-    private static void saveBirthRegistration(Context context, org.ei.opensrp.Context openSrpContext,
-                                              String jsonString, String providerId, String imageKey, String bindType) {
+    private static void saveChildEnrollment(Context context, org.ei.opensrp.Context openSrpContext,
+                                            String jsonString, String providerId, String imageKey, String bindType) {
         if (context == null || openSrpContext == null || StringUtils.isBlank(providerId)
                 || StringUtils.isBlank(jsonString)) {
             return;
@@ -168,9 +170,7 @@ public class JsonFormUtils {
             // Replace values for location questions with their corresponding location IDs
             for (int i = 0; i < fields.length(); i++) {
                 String key = fields.getJSONObject(i).getString("key");
-                if (key.equals("Home_Facility")
-                        || key.equals("Ce_County") || key.equals("Ce_Sub_County")
-                        || key.equals("Ce_Ward")) {
+                if (key.equals("Home_Facility")) {
                     try {
                         String rawValue = fields.getJSONObject(i).getString("value");
                         JSONArray valueArray = new JSONArray(rawValue);
@@ -1175,6 +1175,10 @@ public class JsonFormUtils {
             lastName = StringUtils.isBlank(tokens[1]) ? lastName : tokens[1];
         }
 
+        if(StringUtils.isBlank(fullName) && StringUtils.isBlank(firstName)
+                && StringUtils.isBlank(lastName) && StringUtils.isBlank(middleName))
+            return null;
+
         Date birthdate = formatDate(bb, true);
         String dd = getSubFormFieldValue(fields, FormEntityConstants.Person.deathdate, bindType);
         Date deathdate = formatDate(dd, true);
@@ -1710,9 +1714,9 @@ public class JsonFormUtils {
             JSONArray defaultFacility = generateDefaultLocationHierarchy(context, new ArrayList<>(allLevels.subList(0, 5)));
             JSONArray upToFacilities = generateLocationHierarchyTree(context, false, new ArrayList<>(allLevels.subList(0, 5)));
             JSONArray entireTree = generateLocationHierarchyTree(context, true, allLevels);
-            JSONArray counties = generateLocationHierarchyTree(context, true, new ArrayList<>(allLevels.subList(0, 2)));
-            JSONArray subCounties = generateLocationHierarchyTree(context, true, new ArrayList<>(allLevels.subList(0, 3)));
-            JSONArray wards = generateLocationHierarchyTree(context, true, new ArrayList<>(allLevels.subList(0, 4)));
+            JSONArray counties = generateLocationArray("County", context, true, new ArrayList<>(allLevels.subList(1, 2)));
+            JSONArray subCounties = generateLocationArray("Sub County",context, true, new ArrayList<>(allLevels.subList(2, 3)));
+            JSONArray wards = generateLocationArray("Ward", context, true, new ArrayList<>(allLevels.subList(3, 4)));
 
             for (int i = 0; i < questions.length(); i++) {
                 if (questions.getJSONObject(i).getString("key").equals("Home_Facility")) {
@@ -1721,25 +1725,54 @@ public class JsonFormUtils {
                         questions.getJSONObject(i).put("default", defaultFacility.toString());
                     }
                 } else if (questions.getJSONObject(i).getString("key").equals("Ce_County")) {
-                    questions.getJSONObject(i).put("tree", new JSONArray(counties.toString()));
+                    questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
+                    questions.getJSONObject(i).put("values", new JSONArray(counties.toString()));
                     if (defaultLocation != null) {
-                        questions.getJSONObject(i).put("default", defaultLocation.toString());
+                        questions.getJSONObject(i).put("value", defaultLocation.toString());
                     }
                 } else if (questions.getJSONObject(i).getString("key").equals("Ce_Sub_County")) {
-                    questions.getJSONObject(i).put("tree", new JSONArray(subCounties.toString()));
+                    questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
+                    questions.getJSONObject(i).put("values", new JSONArray(subCounties.toString()));
                     if (defaultLocation != null) {
-                        questions.getJSONObject(i).put("default", defaultLocation.toString());
+                        questions.getJSONObject(i).put("value", defaultLocation.toString());
                     }
                 } else if (questions.getJSONObject(i).getString("key").equals("Ce_Ward")) {
-                    questions.getJSONObject(i).put("tree", new JSONArray(wards.toString()));
+                    questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
+                    questions.getJSONObject(i).put("values", new JSONArray(wards.toString()));
                     if (defaultLocation != null) {
-                        questions.getJSONObject(i).put("default", defaultLocation.toString());
+                        questions.getJSONObject(i).put("value", defaultLocation.toString());
                     }
                 }
             }
         } catch (JSONException e) {
-            //Log.e(TAG, Log.getStackTraceString(e));
+            Log.e(TAG, e.getMessage(), e);
         }
+    }
+
+    private static JSONArray generateLocationArray(String locationTag, org.ei.opensrp.Context context, boolean b, ArrayList<String> strings) throws JSONException {
+
+        JSONArray jsonArray = new JSONArray();
+        LocationRepository locationRepository = VaccinatorApplication.getInstance().locationRepository();
+
+        List<Location> locations = locationRepository.getLocationsByTag(locationTag);
+
+        if(locations != null && locations.size() > 0) {
+            for (Location l : locations) {
+                if(l.getTags() != null && l.getTags().contains(locationTag))
+                    jsonArray.put(l.getName());
+            }
+            jsonArray.put("Other");
+        } else {
+            JSONArray array = generateLocationHierarchyTree(context, b, strings);
+            for(int i = 0; i < array.length(); i++){
+                JSONObject jo = array.getJSONObject(i);
+                if(jo.has("name") && StringUtils.isNotBlank(jo.getString("name"))){
+                    jsonArray.put(jo.getString("name"));
+                }
+            }
+        }
+
+        return jsonArray;
     }
 
     public static void addAddAvailableVaccines(Context context, JSONObject form) {

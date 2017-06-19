@@ -27,6 +27,7 @@ import org.ei.opensrp.path.repository.UniqueIdRepository;
 import org.ei.opensrp.path.repository.VaccineRepository;
 import org.ei.opensrp.path.repository.WeightRepository;
 import org.ei.opensrp.path.repository.ZScoreRepository;
+import org.ei.opensrp.path.repository.LocationRepository;
 import org.ei.opensrp.repository.Repository;
 import org.ei.opensrp.sync.DrishtiSyncScheduler;
 import org.ei.opensrp.view.activity.DrishtiApplication;
@@ -62,6 +63,7 @@ public class VaccinatorApplication extends DrishtiApplication
     private RecurringServiceRecordRepository recurringServiceRecordRepository;
     private RecurringServiceTypeRepository recurringServiceTypeRepository;
     private boolean lastModified;
+    private LocationRepository locationRepository;
 
     @Override
     public void onCreate() {
@@ -226,6 +228,7 @@ public class VaccinatorApplication extends DrishtiApplication
             weightRepository();
             vaccineRepository();
             uniqueIdRepository();
+            locationRepository();
             recurringServiceTypeRepository();
             recurringServiceRecordRepository();
         }
@@ -310,6 +313,13 @@ public class VaccinatorApplication extends DrishtiApplication
         } catch (Exception e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
+    }
+
+    public LocationRepository locationRepository() {
+        if (locationRepository == null) {
+            locationRepository = new LocationRepository((PathRepository) getRepository());
+        }
+        return locationRepository;
     }
 
 }

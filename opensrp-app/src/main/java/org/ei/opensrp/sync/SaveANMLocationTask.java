@@ -5,6 +5,7 @@ import org.ei.opensrp.util.Log;
 import org.ei.opensrp.view.BackgroundAction;
 import org.ei.opensrp.view.LockingBackgroundTask;
 import org.ei.opensrp.view.ProgressIndicator;
+import org.json.JSONArray;
 
 public class SaveANMLocationTask {
     private final LockingBackgroundTask task;
@@ -37,4 +38,6 @@ public class SaveANMLocationTask {
             }
         });
     }
+
+
 }

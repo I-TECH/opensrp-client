@@ -37,6 +37,7 @@ import org.ei.opensrp.domain.TimeStatus;
 import org.ei.opensrp.event.Listener;
 import org.ei.opensrp.path.R;
 import org.ei.opensrp.path.application.VaccinatorApplication;
+import org.ei.opensrp.path.service.intent.LocationsIntentService;
 import org.ei.opensrp.path.service.intent.PullUniqueIdsIntentService;
 import org.ei.opensrp.path.service.intent.ZScoreRefreshIntentService;
 import org.ei.opensrp.repository.AllSharedPreferences;
@@ -222,7 +223,10 @@ public class LoginActivity extends Activity {
                         if (!PathConstants.TIME_CHECK||timeStatus.equals(TimeStatus.OK)) {
                             remoteLoginWith(userName, password, loginResponse.payload());
                             Intent intent = new Intent(appContext, PullUniqueIdsIntentService.class);
+                            Intent lIntent = new Intent(appContext, LocationsIntentService.class);
+                            lIntent.putExtra("userInfo", loginResponse.payload());
                             appContext.startService(intent);
+                            appContext.startService(lIntent);
                         } else {
                             if (timeStatus.equals(TimeStatus.TIMEZONE_MISMATCH)) {
                                 TimeZone serverTimeZone = context.userService()

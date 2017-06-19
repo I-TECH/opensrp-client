@@ -66,7 +66,7 @@
           "column_name":"nrc_number",
           "type":"Client",
           "json_mapping":{
-            "field":"attributes.NRC_Number"
+            "field":"identifiers.ID_NUMBER"
           }
         },
         {
@@ -197,7 +197,28 @@
           "column_name":"zeir_id",
           "type":"Client",
           "json_mapping":{
-            "field":"identifiers.KIP_ID"
+            "field":"identifiers.OPENMRS_ID"
+          }
+        },
+        {
+          "column_name":"nupi_number",
+          "type":"Client",
+          "json_mapping":{
+            "field":"identifiers.NATIONAL_UNIQUE_PATIENT_IDENTIFIER"
+          }
+        },
+        {
+          "column_name":"hdss_number",
+          "type":"Client",
+          "json_mapping":{
+            "field":"identifiers.HDSS_NUMBER"
+          }
+        },
+        {
+          "column_name":"epi_card_number",
+          "type":"Client",
+          "json_mapping":{
+            "field":"identifiers.PERMANENT_REGISTER_NUMBER"
           }
         },
         {
@@ -218,7 +239,28 @@
           "column_name": "relational_id",
           "type": "Client",
           "json_mapping": {
-            "field": "relationships.mother"
+            "field": "relationships.mother.relativeEntityId"
+          }
+        },
+        {
+          "column_name": "g_relational_id",
+          "type": "Client",
+          "json_mapping": {
+            "field": "relationships.guardian.relativeEntityId"
+          }
+        },
+        {
+          "column_name": "m_relationship_type",
+          "type": "Client",
+          "json_mapping": {
+            "field": "relationshipTypes.mother.relationshipType"
+          }
+        },
+        {
+          "column_name": "g_relationship_type",
+          "type": "Client",
+          "json_mapping": {
+            "field": "relationshipTypes.guardian.relationshipType"
           }
         },
         {
@@ -263,7 +305,7 @@
           "type":"Event",
           "json_mapping":{
             "field":"obs.fieldCode",
-            "concept":"1594AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            "formSubmissionField":"Father_Guardian_Name"
           }
         },
         {
@@ -271,13 +313,6 @@
           "type":"Client",
           "json_mapping":{
             "field":"birthdate"
-          }
-        },
-        {
-          "column_name":"epi_card_number",
-          "type":"Client",
-          "json_mapping":{
-            "field":"attributes.Child_Register_Card_Number"
           }
         },
         {

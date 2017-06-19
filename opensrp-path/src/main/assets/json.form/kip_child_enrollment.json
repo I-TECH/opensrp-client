@@ -6,6 +6,7 @@
   },
   "guardian": {
     "encounter_type": "New Guardian Registration"
+
   },
   "entity_id": "",
   "relational_id": "",
@@ -152,12 +153,8 @@
         "openmrs_entity": "person_identifier",
         "openmrs_entity_id": "PERMANENT_REGISTER_NUMBER",
         "type": "edit_text",
-        "hint": "Permanent register number *",
-        "edit_type": "name",
-        "v_required": {
-          "value": true,
-          "err": "Please enter the permanent register number"
-        }
+        "hint": "Permanent register number",
+        "edit_type": "name"
       },
       {
         "key": "KIP_ID",
@@ -180,11 +177,7 @@
         "openmrs_entity": "person_identifier",
         "openmrs_entity_id": "NATIONAL_UNIQUE_PATIENT_IDENTIFIER",
         "type": "edit_text",
-        "hint": "NUPI",
-        "v_numeric": {
-          "value": "true",
-          "err": "Please enter a valid NUPI"
-        }
+        "hint": "NUPI"
       },
       {
         "key": "CWC_Number",
@@ -192,11 +185,7 @@
         "openmrs_entity": "person_identifier",
         "openmrs_entity_id": "CWC_NUMBER",
         "type": "edit_text",
-        "hint": "CWC Number",
-        "v_numeric": {
-          "value": "true",
-          "err": "Please enter a valid CWC number"
-        }
+        "hint": "CWC Number"
       },
       {
         "key": "HDSS_Number",
@@ -204,11 +193,7 @@
         "openmrs_entity": "person_identifier",
         "openmrs_entity_id": "HDSS_NUMBER",
         "type": "edit_text",
-        "hint": "HDSS Number",
-        "v_numeric": {
-          "value": "true",
-          "err": "Please enter a valid HDSS number"
-        }
+        "hint": "HDSS Number"
       },
       {
         "key": "Child_Birth_Notification",
@@ -304,14 +289,18 @@
         "openmrs_entity_id": "birthdate",
         "entity_id": "mother",
         "type": "date_picker",
-        "hint": "Mother/guardian DOB",
+        "hint": "Mother/guardian DOB *",
         "look_up": "true",
         "expanded": false,
         "duration": {
           "label": "Age"
         },
         "min_date": "01-01-1900",
-        "max_date": "today-10y"
+        "max_date": "today-10y",
+        "v_required": {
+          "value": "true",
+          "err": "Please enter the mother/guardian's DOB"
+        }
       },
       {
         "key": "Mother_Guardian_Relationship",
@@ -345,11 +334,11 @@
         "hint": "Mother/guardian phone number",
         "v_numeric": {
           "value": "true",
-          "err": "Number must begin with 095, 096, or 097 and must be a total of 10 digits in length"
+          "err": "Number must begin with 07 and must be a total of 10 digits in length"
         },
         "v_regex": {
-          "value": "(09[5-7][0-9]{7})|\s*",
-          "err": "Number must begin with 095, 096, or 097 and must be a total of 10 digits in length"
+          "value": "(07[0-9]{8})|\s*",
+          "err": "Number must begin with 07 and must be a total of 10 digits in length"
         }
       },
       {
@@ -362,7 +351,7 @@
         "hint": "Father/guardian full name",
         "edit_type": "name",
         "v_regex": {
-          "value": "^[A-Za-z\\.\\-]+(?:\\s[A-Za-z\\.\\-]+)+$",
+          "value": "(^$)|(^[A-Za-z\\.\\-]+(?:\\s[A-Za-z\\.\\-]+)+$)",
           "err": "Please enter a valid name e.g. John Doe"
         }
       },
@@ -452,9 +441,9 @@
         "openmrs_entity": "person_address",
         "openmrs_entity_id": "stateProvince",
         "openmrs_data_type": "text",
-        "type": "tree",
+        "type": "spinner",
         "hint": "County *",
-        "tree": [],
+        "values": [],
         "v_required": {
           "value": true,
           "err": "Please enter the child's county"
@@ -466,9 +455,9 @@
         "openmrs_entity": "person_address",
         "openmrs_entity_id": "countyDistrict",
         "openmrs_data_type": "text",
-        "type": "tree",
+        "type": "spinner",
         "hint": "Sub County *",
-        "tree": [],
+        "values": [],
         "v_required": {
           "value": true,
           "err": "Please enter the child's sub county"
@@ -480,9 +469,9 @@
         "openmrs_entity": "person_address",
         "openmrs_entity_id": "cityVillage",
         "openmrs_data_type": "text",
-        "type": "tree",
+        "type": "spinner",
         "hint": "Ward *",
-        "tree": [],
+        "values": [],
         "v_required": {
           "value": true,
           "err": "Please enter the child's ward"
@@ -568,14 +557,14 @@
         "type": "spinner",
         "hint": "HIV exposure",
         "values": [
-          "CE",
-          "MSU",
-          "CNE"
+          "Exposed (CE)",
+          "Unkown (MSU)",
+          "Not Exposed (CNE)"
         ],
         "openmrs_choice_ids": {
-          "CE": "",
-          "MSU": "",
-          "CNE": ""
+          "Exposed (CE)": "",
+          "Unkown (MSU)": "",
+          "Not Exposed (CNE)": ""
         }
       }
     ]

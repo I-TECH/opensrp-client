@@ -26,7 +26,7 @@ public class Client extends BaseEntity {
 	
 	private String gender;
 	
-	private Map<String, List<Map<String, String>>> relationships;
+	private Map<String, Map<String, String>> relationships;
 
 	protected Client() {
 		
@@ -145,11 +145,11 @@ public class Client extends BaseEntity {
 		this.gender = gender;
 	}
 
-	public Map<String, List<Map<String, String>>> getRelationships() {
+	public Map<String, Map<String, String>> getRelationships() {
 		return relationships;
 	}
 
-	public void setRelationships(Map<String, List<Map<String, String>>> relationships) {
+	public void setRelationships(Map<String, Map<String, String>> relationships) {
 		this.relationships = relationships;
 	}
 	
@@ -196,14 +196,14 @@ public class Client extends BaseEntity {
 	/**
 	 * Overrides the existing data
 	 */
-	public Client withRelationships(Map<String, List<Map<String, String>>> relationships) {
+	public Client withRelationships(Map<String, Map<String, String>> relationships) {
 		this.relationships = relationships;
 		return this;
 	}
 	
-	public List<Map<String, String>> findRelatives(String relationshipType) {
+	public Map<String, String> findRelatives(String relationshipType) {
 		if(relationships == null){
-			relationships = new HashMap<String, List<Map<String, String>>>();
+			relationships = new HashMap<>();
 		}
 		
 		return relationships.get(relationshipType);
@@ -217,18 +217,16 @@ public class Client extends BaseEntity {
 	 */
 	public void addRelationship(String relationType, String relativeEntityId, String relationshipType) {
 		if(relationships == null){
-			relationships = new HashMap<String, List<Map<String, String>>>();
+			relationships = new HashMap<>();
 		}
 		
-		List<Map<String, String>> relatives = findRelatives(relationType);
+		Map<String, String> relatives = findRelatives(relationType);
 		if(relatives == null){
-			relatives = new ArrayList<>();
+			relatives = new HashMap<>();
 		}
 
-		Map<String, String> relas = new HashMap<>();
-		relas.put("relativeEntityId", relativeEntityId);
-		relas.put("relationshipType", relationshipType);
-		relatives.add(relas);
+		relatives.put("relativeEntityId", relativeEntityId);
+		relatives.put("relationshipType", relationshipType);
 
 		relationships.put(relationType, relatives);
 	}
