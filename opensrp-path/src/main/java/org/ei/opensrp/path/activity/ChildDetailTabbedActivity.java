@@ -630,7 +630,7 @@ public class ChildDetailTabbedActivity extends BaseActivity implements Vaccinati
                     JSONObject form = new JSONObject(jsonString);
                     if (form.getString("encounter_type").equals("Death")) {
                         JsonFormUtils.saveReportDeceased(this, getOpenSRPContext(), jsonString, allSharedPreferences.fetchRegisteredANM(), location_name, childDetails.entityId());
-                    } else if (form.getString("encounter_type").equals("Birth Registration")) {
+                    } else if (form.getString("encounter_type").equals("Child Enrollment")) {
                         JsonFormUtils.editsave(this, getOpenSRPContext(), jsonString, allSharedPreferences.fetchRegisteredANM(), "Child_Photo", "child", "mother");
                     } else if (form.getString("encounter_type").equals("AEFI")) {
                         JsonFormUtils.saveAdverseEvent(jsonString, location_name,

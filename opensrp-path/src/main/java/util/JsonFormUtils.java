@@ -206,7 +206,6 @@ public class JsonFormUtils {
 
             String relationships = AssetHandler.readFileFromAssetsFolder(FormUtils.ecClientRelationships, context);
             JSONArray relationshipsArray = new JSONArray(relationships);
-            List<String> usedIds = new ArrayList<>();
 
             for (int i = 0; i < relationshipsArray.length(); i++) {
                 Client s = null;
@@ -214,29 +213,14 @@ public class JsonFormUtils {
 
                 JSONObject rObject = relationshipsArray.getJSONObject(i);
                 String subBindType = rObject.getString("client_relationship");
-                boolean proceed = true;
 
                 if (lookUpEntityId.equals(subBindType) && StringUtils.isNotBlank(lookUpBaseEntityId)) {
                     s = new Client(lookUpBaseEntityId);
                     addRelationship(s, c, subBindType, getRelationshipTypeId(openSrpContext, fields, bindType));
-                }
+                } else {
 
-                for (int n = 0; n < fields.length(); n++) {
-                    JSONObject field = fields.getJSONObject(n);
-                    if (field.has(ENTITY_ID) && field.getString(ENTITY_ID).equals(subBindType)) {
-                        boolean v_required = field.has("v_required") ? field.getJSONObject("v_required").optBoolean("value") : false;
-                        String val = field.getString("value");
-
-                        if (v_required && (val == null || val.isEmpty())) {
-                            proceed = false;
-                        }
-                    }
-                }
-
-                if (proceed && s == null) {
                     if (StringUtils.isNotBlank(subBindType)) {
                         s = JsonFormUtils.createSubformClient(context, openSrpContext, fields, c, subBindType, null);
-                        usedIds.add(s.getIdentifier(OPENMRS_ID));
                     }
 
                     if (s != null && e != null) {
@@ -248,18 +232,18 @@ public class JsonFormUtils {
                             }
                         }
                     }
-                }
 
-                if (s != null) {
-                    JSONObject clientJson = new JSONObject(gson.toJson(s));
+                    if (s != null) {
+                        JSONObject clientJson = new JSONObject(gson.toJson(s));
 
-                    ecUpdater.addClient(s.getBaseEntityId(), clientJson);
+                        ecUpdater.addClient(s.getBaseEntityId(), clientJson);
 
-                }
+                    }
 
-                if (se != null) {
-                    JSONObject eventJson = new JSONObject(gson.toJson(se));
-                    ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
+                    if (se != null) {
+                        JSONObject eventJson = new JSONObject(gson.toJson(se));
+                        ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
+                    }
                 }
             }
 
@@ -275,14 +259,8 @@ public class JsonFormUtils {
                 ecUpdater.addEvent(e.getBaseEntityId(), eventJson);
             }
 
-            String openmrsId = c.getIdentifier(OPENMRS_ID);
             UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
-            uniqueIdRepo.close(openmrsId);
-            if(usedIds != null && usedIds.size() > 0){
-                for(String s: usedIds){
-                    uniqueIdRepo.close(s);
-                }
-            }
+            uniqueIdRepo.close(c.getIdentifier(OPENMRS_ID));
 
             String imageLocation = getFieldValue(fields, imageKey);
             saveImage(context, providerId, entityId, imageLocation);
@@ -321,9 +299,7 @@ public class JsonFormUtils {
 
             for (int i = 0; i < fields.length(); i++) {
                 String key = fields.getJSONObject(i).getString("key");
-                if (key.equals("Home_Facility")
-                        || key.equals("Birth_Facility_Name")
-                        || key.equals("Residential_Area")) {
+                if (key.equals("Home_Facility")) {
                     try {
                         String rawValue = fields.getJSONObject(i).getString("value");
                         JSONArray valueArray = new JSONArray(rawValue);
@@ -339,6 +315,10 @@ public class JsonFormUtils {
                     if (TextUtils.isEmpty(fields.getJSONObject(i).optString("value"))) {
                         fields.getJSONObject(i).put("value", MOTHER_DEFAULT_DOB);
                     }
+                } else if (key.equals("Father_Guardian_Date_Birth")) {
+                    if (TextUtils.isEmpty(fields.getJSONObject(i).optString("value"))) {
+                        fields.getJSONObject(i).put("value", FATHER_DEFAULT_DOB);
+                    }
                 }
             }
 
@@ -346,8 +326,6 @@ public class JsonFormUtils {
 
             Client baseClient = JsonFormUtils.createBaseClient(fields, entityId);
             Event e = JsonFormUtils.createEvent(openSrpContext, fields, metadata, entityId, encounterType, providerId, bindType);
-
-            Client subFormClient = null;
 
             JSONObject lookUpJSONObject = getJSONObject(metadata, "look_up");
             String lookUpEntityId = "";
@@ -357,43 +335,53 @@ public class JsonFormUtils {
                 lookUpBaseEntityId = getString(lookUpJSONObject, "value");
             }
 
-            if (lookUpEntityId.equals("mother") && StringUtils.isNotBlank(lookUpBaseEntityId)) {
-                Client ss = new Client(lookUpBaseEntityId);
-                addRelationship(ss, baseClient, "mother", getRelationshipTypeId(openSrpContext, fields, "mother"));
-            }
+            String relationships = AssetHandler.readFileFromAssetsFolder(FormUtils.ecClientRelationships, context);
+            JSONArray relationshipsArray = new JSONArray(relationships);
 
-            if (StringUtils.isNotBlank(subBindType)) {
-                subFormClient = JsonFormUtils.createSubformClient(context, openSrpContext, fields, baseClient, subBindType, relationalId);
-            }
-            Event se = null;
-            if (subFormClient != null && e != null) {
-                JSONObject subBindTypeJson = getJSONObject(jsonForm, subBindType);
-                if (subBindTypeJson != null) {
-                    String subBindTypeEncounter = getString(subBindTypeJson, ENCOUNTER_TYPE);
-                    if (StringUtils.isNotBlank(subBindTypeEncounter)) {
-                        se = JsonFormUtils.createSubFormEvent(null, metadata, e, subFormClient.getBaseEntityId(), subBindTypeEncounter, providerId, subBindType);
+            for (int i = 0; i < relationshipsArray.length(); i++) {
+                Client s = null;
+                Event se = null;
+
+                JSONObject rObject = relationshipsArray.getJSONObject(i);
+                String _subBindType = rObject.getString("client_relationship");
+
+                if (lookUpEntityId.equals(_subBindType) && StringUtils.isNotBlank(lookUpBaseEntityId)) {
+                    s = new Client(lookUpBaseEntityId);
+                    addRelationship(s, baseClient, _subBindType, getRelationshipTypeId(openSrpContext, fields, bindType));
+                } else {
+
+                    if (StringUtils.isNotBlank(_subBindType)) {
+                        s = JsonFormUtils.createSubformClient(context, openSrpContext, fields, baseClient, _subBindType, relationalId);
+                    }
+
+                    if (s != null && e != null) {
+                        JSONObject subBindTypeJson = getJSONObject(jsonForm, _subBindType);
+                        if (subBindTypeJson != null) {
+                            String subBindTypeEncounter = getString(subBindTypeJson, ENCOUNTER_TYPE);
+                            if (StringUtils.isNotBlank(subBindTypeEncounter)) {
+                                se = JsonFormUtils.createSubFormEvent(null, metadata, e, s.getBaseEntityId(), subBindTypeEncounter, providerId, _subBindType);
+                            }
+                        }
+                    }
+
+                    if (s != null) {
+                        mergeAndSaveClient(context, s);
+                    }
+
+                    if (se != null) {
+                        JSONObject eventJson = new JSONObject(gson.toJson(se));
+                        ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
                     }
                 }
             }
+
             if (baseClient != null) {
                 mergeAndSaveClient(context, baseClient);
-
             }
             if (e != null) {
-
                 JSONObject eventJson = new JSONObject(gson.toJson(e));
                 ecUpdater.addEvent(e.getBaseEntityId(), eventJson);
-
             }
-            if (subFormClient != null) {
-                mergeAndSaveClient(context, subFormClient);
-
-            }
-            if (se != null) {
-                JSONObject eventJson = new JSONObject(gson.toJson(se));
-                ecUpdater.addEvent(se.getBaseEntityId(), eventJson);
-            }
-
 
             SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
             AllSharedPreferences allSharedPreferences = new AllSharedPreferences(preferences);
@@ -1152,16 +1140,6 @@ public class JsonFormUtils {
         if (StringUtils.isNotBlank(parentIdentifier)) {
             String identifier = parentIdentifier.concat("_").concat(bindType);
             idents.put(M_KIP_ID, identifier);
-        }
-
-        UniqueIdRepository uniqueIdRepo = VaccinatorApplication.getInstance().uniqueIdRepository();
-        String openMrsId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
-
-        if (openMrsId.isEmpty()) {
-            Toast.makeText(context, context.getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
-            return null;
-        } else {
-            idents.put(OPENMRS_ID, openMrsId);
         }
 
         String middleName = getSubFormFieldValue(fields, FormEntityConstants.Person.middle_name, bindType);

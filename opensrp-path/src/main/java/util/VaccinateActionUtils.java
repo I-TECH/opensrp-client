@@ -317,7 +317,7 @@ public class VaccinateActionUtils {
 
             case measles1:
             case mr1:
-            case opv4:
+            case yf:
             case ipv:
                 return "9 months";
 

@@ -23,7 +23,7 @@ public class VaccineRepo {
 
         measles1("MEASLES 1", null, -1, 274, 0, "child"),
         mr1("MR 1", null, -1, 274, 0, "child"),
-        opv4("OPV 4", null, 1830, 274, 28, "child"),
+        yf("YF", null, -1, 274, 0, "child"),
 
         measles2("MEASLES 2", measles1, -1, 548, 274, "child"),
         mr2("MR 2", mr1, -1, 548, 274, "child"),
