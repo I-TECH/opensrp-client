@@ -5,7 +5,7 @@ import com.vijay.jsonwizard.interactors.JsonFormInteractor;
 
 import org.ei.opensrp.path.widgets.PathDatePickerFactory;
 import org.ei.opensrp.path.widgets.PathEditTextFactory;
-import org.ei.opensrp.path.widgets.PathSpinnerFactory;
+import org.ei.opensrp.path.widgets.KipSpinnerFactory;
 
 /**
  * Created by keyman on 11/04/2017.
@@ -23,7 +23,7 @@ public class PathJsonFormInteractor extends JsonFormInteractor {
         super.registerWidgets();
         map.put(JsonFormConstants.EDIT_TEXT, new PathEditTextFactory());
         map.put(JsonFormConstants.DATE_PICKER, new PathDatePickerFactory());
-        map.put(JsonFormConstants.SPINNER, new PathSpinnerFactory());
+        map.put(JsonFormConstants.SPINNER, new KipSpinnerFactory());
     }
 
     public static JsonFormInteractor getInstance() {

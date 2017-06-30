@@ -412,6 +412,48 @@
     ]
   },
   {
+    "name": "6 Months",
+    "id": "Six_Months",
+    "days_after_birth_due": 183,
+    "vaccines": [
+      {
+        "name": "MR - CE",
+        "type": "MR",
+        "openmrs_date": {
+          "parent_entity": "162586AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "entity": "concept",
+          "entity_id": "1410AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        "openmrs_calculate": {
+          "parent_entity": "162586AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "entity": "concept",
+          "entity_id": "1418AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "calculation": 1
+        },
+        "schedule": {
+          "due": [
+            {
+              "reference": "dob",
+              "offset": "+6m"
+            }
+          ],
+          "conditions": [
+            {
+              "attribute": "pmtct_status",
+              "value": "Exposed (CE)"
+            }
+          ],
+          "expiry": [
+            {
+              "reference": "dob",
+              "offset": "+5y"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "9 Months",
     "id": "Nine_Months",
     "days_after_birth_due": 274,
@@ -463,7 +505,7 @@
         }
       },
       {
-        "name": "Yellow fever",
+        "name": "YF",
         "type": "YF",
         "openmrs_date": {
           "parent_entity": "5864AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",

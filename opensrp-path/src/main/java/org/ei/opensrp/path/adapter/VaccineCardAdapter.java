@@ -65,6 +65,7 @@ public class VaccineCardAdapter extends BaseAdapter {
         try {
             JSONObject vaccineData = vaccineGroup.getVaccineData().getJSONArray("vaccines")
                     .getJSONObject(position);
+
             String vaccineName = vaccineData.getString("name");
             if (!vaccineCards.containsKey(vaccineName)) {
                 VaccineCard vaccineCard = new VaccineCard(context);

@@ -269,7 +269,6 @@ public class JsonFormUtils {
             Date lastSyncDate = new Date(lastSyncTimeStamp);
             PathClientProcessor.getInstance(context).processClient(ecUpdater.getEvents(lastSyncDate, BaseRepository.TYPE_Unsynced));
             allSharedPreferences.saveLastUpdatedAtDate(lastSyncDate.getTime());
-
         } catch (Exception e) {
             Log.e(TAG, "", e);
         }
@@ -1704,22 +1703,16 @@ public class JsonFormUtils {
                     }
                 } else if (questions.getJSONObject(i).getString("key").equals("Ce_County")) {
                     questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
-                    questions.getJSONObject(i).put("values", new JSONArray(counties.toString()));
-                    if (defaultLocation != null) {
-                        questions.getJSONObject(i).put("value", defaultLocation.toString());
-                    }
+                    questions.getJSONObject(i).put("values", counties);
+
                 } else if (questions.getJSONObject(i).getString("key").equals("Ce_Sub_County")) {
                     questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
-                    questions.getJSONObject(i).put("values", new JSONArray(subCounties.toString()));
-                    if (defaultLocation != null) {
-                        questions.getJSONObject(i).put("value", defaultLocation.toString());
-                    }
+                    questions.getJSONObject(i).put("values", subCounties);
+
                 } else if (questions.getJSONObject(i).getString("key").equals("Ce_Ward")) {
                     questions.getJSONObject(i).remove(JsonFormUtils.VALUES);
-                    questions.getJSONObject(i).put("values", new JSONArray(wards.toString()));
-                    if (defaultLocation != null) {
-                        questions.getJSONObject(i).put("value", defaultLocation.toString());
-                    }
+                    questions.getJSONObject(i).put("values", wards);
+
                 }
             }
         } catch (JSONException e) {

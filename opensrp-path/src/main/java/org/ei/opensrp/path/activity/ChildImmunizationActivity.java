@@ -409,9 +409,14 @@ public class ChildImmunizationActivity extends BaseActivity
 
             try {
                 JSONArray supportedVaccines = new JSONArray(supportedVaccinesString);
+                JSONObject supportedVaccineGroup;
 
                 for (int i = 0; i < supportedVaccines.length(); i++) {
-                    addVaccineGroup(-1, supportedVaccines.getJSONObject(i), vaccineList, alerts);
+                    supportedVaccineGroup = checkVaccinesConditions(supportedVaccines.getJSONObject(i));
+
+                    if(supportedVaccineGroup.has("vaccines") && supportedVaccineGroup.getJSONArray("vaccines").length() > 0) {
+                        addVaccineGroup(-1, supportedVaccineGroup, vaccineList, alerts);
+                    }
                 }
             } catch (JSONException e) {
                 Log.e(TAG, Log.getStackTraceString(e));
@@ -419,6 +424,46 @@ public class ChildImmunizationActivity extends BaseActivity
         }
 
         showVaccineNotifications(vaccineList, alerts);
+    }
+
+    /**
+     * Check if a vaccine within a vaccine group has a condition based on the child's attribute.
+     * Remove the vaccine from the group if it has a condition and the condition isn't met.
+     *
+     * @param supportedVaccineGroup
+     * @return
+     * @throws JSONException
+     */
+    private JSONObject checkVaccinesConditions(JSONObject supportedVaccineGroup) throws JSONException {
+        if(supportedVaccineGroup.has("vaccines")){
+            JSONArray vaccines = supportedVaccineGroup.getJSONArray("vaccines");
+            for(int i=0; i<vaccines.length(); i++){
+                JSONObject vaccine = vaccines.getJSONObject(i);
+                if(vaccine.has("schedule")){
+                    JSONObject schedule = vaccine.getJSONObject("schedule");
+                    if(schedule.has("conditions")){
+                        JSONArray conditions = schedule.getJSONArray("conditions");
+                        for(int n=0; n<conditions.length(); n++){
+                            JSONObject condition = conditions.getJSONObject(n);
+                            if(condition.has("attribute")){
+                                String attribute = condition.getString("attribute");
+                                String value = condition.has("value") ? condition.getString("value") : "";
+
+                                String childAttributeValue = Utils.getValue(childDetails.getColumnmaps(), attribute, false);
+                                if(childAttributeValue == null){
+                                    childAttributeValue = childDetails.getDetails().get(attribute);
+                                }
+                                if(!childAttributeValue.equalsIgnoreCase(value)){
+                                    vaccines.remove(i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return supportedVaccineGroup;
     }
 
     private void showVaccineNotifications(List<Vaccine> vaccineList, List<Alert> alerts) {

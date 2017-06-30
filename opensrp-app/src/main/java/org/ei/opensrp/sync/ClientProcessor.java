@@ -444,9 +444,11 @@ public class ClientProcessor {
                     if (dataSegment != null && dataSegment.equalsIgnoreCase("relationships")) {
                         if(jsonDocument.has("relationships")) {
                             JSONObject relationshipsObject = jsonDocument.getJSONObject("relationships");
-                            JSONObject relationship = relationshipsObject.getJSONObject(fieldName);
-                            String relationalId = relationship.getString("relativeEntityId");
-                            contentValues.put(columnName, relationalId);
+                            if(relationshipsObject.has(fieldName)) {
+                                JSONObject relationship = relationshipsObject.getJSONObject(fieldName);
+                                String relationalId = relationship.getString("relativeEntityId");
+                                contentValues.put(columnName, relationalId);
+                            }
                         }
                         continue;
                     }
@@ -455,9 +457,11 @@ public class ClientProcessor {
                     if (dataSegment != null && dataSegment.equalsIgnoreCase("relationshipTypes")) {
                         if(jsonDocument.has("relationships")) {
                             JSONObject relationshipsObject = jsonDocument.getJSONObject("relationships");
-                            JSONObject relationship = relationshipsObject.getJSONObject(fieldName);
-                            String relationshipType = relationship.getString("relationshipType");
-                            contentValues.put(columnName, relationshipType);
+                            if(relationshipsObject.has(fieldName)) {
+                                JSONObject relationship = relationshipsObject.getJSONObject(fieldName);
+                                String relationshipType = relationship.getString("relationshipType");
+                                contentValues.put(columnName, relationshipType);
+                            }
                         }
                         continue;
                     }

@@ -17,7 +17,7 @@ dependencies {
 }
 android {
     compileSdkVersion 22
-    buildToolsVersion "22.0.1"
+    buildToolsVersion '23.0.2'
 
     defaultConfig {
         applicationId "org.ei.opensrp.vaccinator"
@@ -25,6 +25,10 @@ android {
         targetSdkVersion 22
         versionCode 1
         versionName "0.02.2 alpha"
+        multiDexEnabled true
+        dexOptions {
+            javaMaxHeapSize "4g"
+        }
     }
     buildTypes {
         release {
