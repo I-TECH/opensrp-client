@@ -268,6 +268,9 @@ public class VaccineSchedule {
 
         // Check if all conditions pass
         for (VaccineCondition curCondition : conditions) {
+            if(curCondition instanceof VaccineCondition.AttributeCondition){
+                ((VaccineCondition.AttributeCondition) curCondition).setBaseEntityId(baseEntityId);
+            }
             if (!curCondition.passes(issuedVaccines)) {
                 return defaultAlert;
             }
