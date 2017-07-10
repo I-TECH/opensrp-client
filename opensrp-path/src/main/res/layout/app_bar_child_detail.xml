@@ -73,7 +73,7 @@
                             android:id="@+id/idforclient"
                             android:textColor="@color/dark_grey"
                             android:textSize="@dimen/activity_sub_title_size"
-                            android:text="ZEIR: 5425428" />
+                            android:text="KIP: 5425428" />
 
                         <org.ei.opensrp.view.customControls.CustomFontTextView
                             android:layout_width="wrap_content"

@@ -289,18 +289,14 @@
         "openmrs_entity_id": "birthdate",
         "entity_id": "mother",
         "type": "date_picker",
-        "hint": "Mother/guardian DOB *",
+        "hint": "Mother/guardian DOB",
         "look_up": "true",
         "expanded": false,
         "duration": {
           "label": "Age"
         },
         "min_date": "01-01-1900",
-        "max_date": "today-10y",
-        "v_required": {
-          "value": "true",
-          "err": "Please enter the mother/guardian's DOB"
-        }
+        "max_date": "today-10y"
       },
       {
         "key": "Mother_Guardian_Relationship",
@@ -498,8 +494,12 @@
         "openmrs_entity_id": "address3",
         "openmrs_data_type": "text",
         "type": "edit_text",
-        "hint": "Village",
-        "edit_type": "name"
+        "hint": "Village *",
+        "edit_type": "name",
+        "v_required": {
+          "value": true,
+          "err": "Please enter the child's village"
+        }
       },
       {
         "key": "Ce_Landmark",

@@ -50,19 +50,19 @@
     "title": "Record out of catchment area service",
     "fields": [
       {
-        "key": "ZEIR_ID",
+        "key": "KIP_ID",
         "openmrs_entity_parent": "",
         "openmrs_entity": "",
         "openmrs_entity_id": "",
         "type": "barcode",
         "barcode_type": "qrcode",
-        "hint": "ZEIR ID *",
+        "hint": "KIP ID *",
         "scanButtonText": "Scan QR Code",
         "read_only": true,
         "value": "",
         "v_required": {
           "value": "true",
-          "err": "Enter the child's ZEIR ID"
+          "err": "Enter the child's KIP ID"
         }
       },
       {

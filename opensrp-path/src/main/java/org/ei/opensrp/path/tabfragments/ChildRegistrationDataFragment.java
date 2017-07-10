@@ -76,7 +76,8 @@ public class ChildRegistrationDataFragment extends Fragment {
                 layout.removeAllViews();
             }
 
-            DetailsRepository detailsRepository = org.ei.opensrp.Context.getInstance().detailsRepository();
+            DetailsRepository detailsRepository = ((ChildDetailTabbedActivity) getActivity()).getDetailsRepository();
+            childDetails = childDetails != null ? childDetails : ((ChildDetailTabbedActivity) getActivity()).getChildDetails();
             detailsMap = detailsRepository.getAllDetailsForClient(childDetails.entityId());
 
             WidgetFactory wd = new WidgetFactory();
