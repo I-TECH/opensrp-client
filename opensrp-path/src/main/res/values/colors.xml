@@ -25,9 +25,9 @@
     <color name="alert_urgent">#D13F3F</color>
     <color name="alert_completed">#4fb45b</color>
     <color name="alert_expired">#ECECEC</color>
-    <color name="primary">#358CB7</color>
+    <color name="primary">#195905</color>
     <color name="primary_background">#ddf0fa</color>
-    <color name="primary_dark">#276C91</color>
+    <color name="primary_dark">#283F28</color>
     <color name="accent">#358CB7</color>
     <color name="text_color_primary">#737373</color>
 
