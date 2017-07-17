@@ -1,6 +1,7 @@
 package org.ei.opensrp.path.fragment.table;
 
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -19,7 +20,8 @@ public class FieldStockVaccineTable extends Fragment {
     CommonPersonObject fieldObject;
     CommonPersonObject childObject;
     CommonPersonObject womanObject;
-
+    public FieldStockVaccineTable(){}
+    @SuppressLint("ValidFragment")
     public FieldStockVaccineTable(CommonPersonObject fieldObject, CommonPersonObject childObject, CommonPersonObject womanObject) {
         this.fieldObject = fieldObject;
         this.childObject = childObject;

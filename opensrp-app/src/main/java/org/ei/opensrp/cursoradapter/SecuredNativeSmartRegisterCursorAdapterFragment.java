@@ -72,7 +72,7 @@ public abstract class SecuredNativeSmartRegisterCursorAdapterFragment extends Se
     public String countSelect;
     public String joinTable="";
 
-    private static final int LOADER_ID = 0;
+    protected static final int LOADER_ID = 0;
     private static final String INIT_LOADER = "init";
 
 
@@ -150,7 +150,9 @@ public abstract class SecuredNativeSmartRegisterCursorAdapterFragment extends Se
 
     protected void setupViews(View view) {
         setupNavBarViews(view);
-        populateClientListHeaderView(getDefaultOptionsProvider().serviceMode().getHeaderProvider(), view);
+        if(getDefaultOptionsProvider() != null) {
+            populateClientListHeaderView(getDefaultOptionsProvider().serviceMode().getHeaderProvider(), view);
+        }
 
         clientsProgressView = (ProgressBar) view.findViewById(R.id.client_list_progress);
         clientsView = (ListView) view.findViewById(R.id.list);
@@ -265,14 +267,16 @@ public abstract class SecuredNativeSmartRegisterCursorAdapterFragment extends Se
 
     private void updateDefaultOptions() {
         currentSearchFilter = new ECSearchOption(null);
-        currentVillageFilter = getDefaultOptionsProvider().villageFilter();
-        currentServiceModeOption = getDefaultOptionsProvider().serviceMode();
-        currentSortOption = getDefaultOptionsProvider().sortOption();
+        if(getDefaultOptionsProvider() != null) {
+            currentVillageFilter = getDefaultOptionsProvider().villageFilter();
+            currentServiceModeOption = getDefaultOptionsProvider().serviceMode();
+            currentSortOption = getDefaultOptionsProvider().sortOption();
 
-        appliedSortView.setText(currentSortOption.name());
-        appliedVillageFilterView.setText(currentVillageFilter.name());
-        serviceModeView.setText(currentServiceModeOption.name());
-        titleLabelView.setText(getDefaultOptionsProvider().nameInShortFormForTitle());
+            appliedSortView.setText(currentSortOption.name());
+            appliedVillageFilterView.setText(currentVillageFilter.name());
+            serviceModeView.setText(currentServiceModeOption.name());
+            titleLabelView.setText(getDefaultOptionsProvider().nameInShortFormForTitle());
+        }
     }
 
     private void populateClientListHeaderView(SecuredNativeSmartRegisterActivity.ClientsHeaderProvider headerProvider, View view) {
@@ -489,13 +493,12 @@ public abstract class SecuredNativeSmartRegisterCursorAdapterFragment extends Se
 
     public void initialFilterandSortExecute() {
         Loader<Cursor> loader = getLoaderManager().getLoader(LOADER_ID);
-        if(loader != null) {
-            return;
-        }
-
         showProgressView();
-
-        getLoaderManager().initLoader(LOADER_ID, null, this);
+        if(loader != null) {
+            filterandSortExecute();
+        }else {
+            getLoaderManager().initLoader(LOADER_ID, null, this);
+        }
     }
 
     public void filterandSortExecute() {
@@ -580,7 +583,7 @@ public abstract class SecuredNativeSmartRegisterCursorAdapterFragment extends Se
         }
     }
 
-    private boolean isValidFilterForFts(CommonRepository commonRepository){
+    protected boolean isValidFilterForFts(CommonRepository commonRepository){
         return commonRepository.isFts() && filters != null
                 && !StringUtils.containsIgnoreCase(filters, "like")
                 && !StringUtils.startsWithIgnoreCase(filters.trim(), "and ");

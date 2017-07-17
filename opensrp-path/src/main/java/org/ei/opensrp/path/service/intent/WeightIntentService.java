@@ -4,15 +4,16 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.util.Log;
 
-import org.ei.opensrp.Context;
 import org.ei.opensrp.domain.Weight;
-import org.ei.opensrp.repository.WeightRepository;
+import org.ei.opensrp.path.application.VaccinatorApplication;
+import org.ei.opensrp.path.repository.WeightRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.List;
 
 import util.JsonFormUtils;
+import util.PathConstants;
 
 
 /**
@@ -20,25 +21,23 @@ import util.JsonFormUtils;
  */
 public class WeightIntentService extends IntentService {
     private static final String TAG = WeightIntentService.class.getCanonicalName();
-    private final WeightRepository weightRepository;
+    public static final String EVENT_TYPE = "Growth Monitoring";
+    public static final String EVENT_TYPE_OUT_OF_CATCHMENT = "Out of Area Service - Growth Monitoring";
+    public static final String ENTITY_TYPE = "weight";
+    private WeightRepository weightRepository;
 
 
     public WeightIntentService() {
-
         super("WeightService");
-        weightRepository = Context.getInstance().weightRepository();
-
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
 
         try {
-            List<Weight> weights = weightRepository.findUnSyncedBeforeTime(24);
+            List<Weight> weights = weightRepository.findUnSyncedBeforeTime(PathConstants.VACCINE_SYNC_TIME);
             if (!weights.isEmpty()) {
                 for (Weight weight : weights) {
-                    String eventType = "Growth Monitoring";
-                    String entityType = "weight";
 
                     JSONObject jsonObject = new JSONObject();
                     jsonObject.put(JsonFormUtils.KEY, "Weight_Kgs");
@@ -52,15 +51,22 @@ public class WeightIntentService extends IntentService {
                     JSONArray jsonArray = new JSONArray();
                     jsonArray.put(jsonObject);
 
-                    JsonFormUtils.createWeightEvent(getApplicationContext(), weight, eventType, entityType, jsonArray);
+                    JsonFormUtils.createWeightEvent(getApplicationContext(), weight, EVENT_TYPE, ENTITY_TYPE, jsonArray);
+                    if (weight.getBaseEntityId() == null || weight.getBaseEntityId().isEmpty()) {
+                        JsonFormUtils.createWeightEvent(getApplicationContext(), weight, EVENT_TYPE_OUT_OF_CATCHMENT, ENTITY_TYPE, jsonArray);
 
+                    }
                     weightRepository.close(weight.getId());
                 }
             }
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
         }
+    }
 
-
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        weightRepository = VaccinatorApplication.getInstance().weightRepository();
+        return super.onStartCommand(intent, flags, startId);
     }
 }

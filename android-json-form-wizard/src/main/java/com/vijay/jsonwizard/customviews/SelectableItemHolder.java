@@ -2,6 +2,7 @@ package com.vijay.jsonwizard.customviews;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
@@ -50,7 +51,8 @@ public class SelectableItemHolder extends TreeNode.BaseNodeViewHolder<String> {
         } else {
             tvValue.setText(levelLabel + ": " + value);
         }
-        tvValue.setTextSize(context.getResources().getDimension(R.dimen.tree_widget_text_size));
+        tvValue.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                context.getResources().getDimension(R.dimen.default_text_size));
         arrowView = (PrintView) view.findViewById(R.id.arrowview);
         arrowView.setIconFont("fonts/material/fonts/material-icon-font.ttf");
 

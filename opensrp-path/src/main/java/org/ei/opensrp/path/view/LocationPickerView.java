@@ -81,7 +81,8 @@ public class LocationPickerView extends CustomFontTextView implements View.OnCli
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 openSrpContext.allSharedPreferences().saveCurrentLocality(serviceLocationsAdapter
                         .getLocationAt(position));
-                LocationPickerView.this.setText(serviceLocationsAdapter.getLocationAt(position));
+                LocationPickerView.this.setText(JsonFormUtils.getOpenMrsReadableName(
+                        serviceLocationsAdapter.getLocationAt(position)));
                 if (onLocationChangeListener != null) {
                     onLocationChangeListener.onLocationChange(serviceLocationsAdapter
                             .getLocationAt(position));
@@ -89,7 +90,7 @@ public class LocationPickerView extends CustomFontTextView implements View.OnCli
                 locationPickerDialog.dismiss();
             }
         });
-        this.setText(getSelectedItem());
+        this.setText(JsonFormUtils.getOpenMrsReadableName(getSelectedItem()));
 
         setClickable(true);
         setOnClickListener(this);
@@ -113,7 +114,8 @@ public class LocationPickerView extends CustomFontTextView implements View.OnCli
         try {
             JSONObject locationData = new JSONObject(openSrpContext.anmLocationController().get());
             if (locationData.has("locationsHierarchy")
-                    && locationData.getJSONObject("locationsHierarchy").has("map")) {
+                    && locationData.getJSONObject("loc" +
+                    "ationsHierarchy").has("map")) {
                 JSONObject map = locationData.getJSONObject("locationsHierarchy").getJSONObject("map");
                 Iterator<String> keys = map.keys();
                 while (keys.hasNext()) {

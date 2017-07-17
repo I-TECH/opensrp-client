@@ -4,16 +4,17 @@ import org.ei.opensrp.domain.Alert;
 import org.ei.opensrp.path.db.VaccineRepo.Vaccine;
 import org.joda.time.DateTime;
 
-import java.util.Date;
+import java.io.Serializable;
 
 /**
  * Created by keyman on 16/11/2016.
  */
-public class VaccineWrapper {
+public class VaccineWrapper implements Serializable {
     private String id;
     private Long dbKey;
     private Photo photo;
     private String name;
+    private String defaultName;
     private String gender;
     private String status;
     private Vaccine vaccine;
@@ -30,9 +31,9 @@ public class VaccineWrapper {
     private String patientNumber;
 
     private DateTime updatedVaccineDate;
-    private DateTime recordedDate;
 
     private boolean today;
+    private boolean synced;
 
     public String getId() {
         return id;
@@ -153,11 +154,6 @@ public class VaccineWrapper {
     public void setUpdatedVaccineDate(DateTime updatedVaccineDate, boolean today) {
         this.today = today;
         this.updatedVaccineDate = updatedVaccineDate;
-        if (!isToday()) {
-            this.recordedDate = new DateTime(new Date());
-        } else {
-            this.recordedDate = updatedVaccineDate;
-        }
     }
 
     public boolean isToday() {
@@ -188,11 +184,19 @@ public class VaccineWrapper {
         this.gender = gender;
     }
 
-    public void setRecordedDate(DateTime recordedDate) {
-        this.recordedDate = recordedDate;
+    public String getDefaultName() {
+        return defaultName;
     }
 
-    public DateTime getRecordedDate() {
-        return recordedDate;
+    public void setDefaultName(String defaultName) {
+        this.defaultName = defaultName;
+    }
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
     }
 }

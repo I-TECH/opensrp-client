@@ -2,10 +2,12 @@ package org.ei.opensrp.path.domain;
 
 import org.joda.time.DateTime;
 
+import java.io.Serializable;
+
 /**
  * Created by keyman on 16/11/2016.
  */
-public class WeightWrapper {
+public class WeightWrapper implements Serializable {
     private String id;
     private Long dbKey;
     private String gender;

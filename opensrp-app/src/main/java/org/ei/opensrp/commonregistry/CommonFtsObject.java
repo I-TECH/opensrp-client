@@ -95,6 +95,12 @@ public class CommonFtsObject {
         if(StringUtils.isBlank(schedule)){
             return null;
         }
+
+        for(String key: alertsScheduleMap.keySet()){
+            if(key.equalsIgnoreCase(schedule)){
+                schedule = key;
+            }
+        }
         Pair<String, Boolean> pair =  alertsScheduleMap.get(schedule);
         if(pair == null){
             return null;
@@ -113,6 +119,20 @@ public class CommonFtsObject {
         }
 
         return pair.second;
+    }
+
+    public String getAlertScheduleName(String vaccineName) {
+        if (StringUtils.isBlank(vaccineName)) {
+            return null;
+        }
+
+        for (String key : alertsScheduleMap.keySet()) {
+            if (key.equalsIgnoreCase(vaccineName)) {
+                return key;
+            }
+        }
+
+        return null;
     }
 
     public String[] getAlertFilterVisitCodes(){

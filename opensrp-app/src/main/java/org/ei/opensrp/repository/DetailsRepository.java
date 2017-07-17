@@ -46,10 +46,10 @@ public class DetailsRepository extends DrishtiRepository {
 
         if (exists){
             int updated = database.update(TABLE_NAME, values, BASE_ENTITY_ID_COLUMN + " = ? AND " + KEY_COLUMN + " MATCH ? ", new String[]{baseEntityId, key});
-            Log.i(getClass().getName(), "Detail Row Updated: " + String.valueOf(updated));
+            //Log.i(getClass().getName(), "Detail Row Updated: " + String.valueOf(updated));
         } else {
             long rowId = database.insert(TABLE_NAME, null, values);
-            Log.i(getClass().getName(), "Details Row Inserted : " + String.valueOf(rowId));
+            //Log.i(getClass().getName(), "Details Row Inserted : " + String.valueOf(rowId));
         }
     }
 
@@ -121,6 +121,19 @@ public class DetailsRepository extends DrishtiRepository {
             commonPersonObject.setDetails(details);
         }
         return details;
+    }
+
+    public boolean deleteDetails(String baseEntityId) {
+        try {
+            SQLiteDatabase db = masterRepository.getWritableDatabase();
+            int afftectedRows = db.delete(TABLE_NAME, BASE_ENTITY_ID_COLUMN + " = ?", new String[]{baseEntityId});
+            if(afftectedRows > 0){
+                return true;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.toString(), e);
+        }
+        return false;
     }
 
 }

@@ -3,6 +3,8 @@ package org.ei.opensrp.clientandeventmodel;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 public abstract class MotechBaseDataObject {
+
+
     @JsonProperty
     protected String type;
 
@@ -11,6 +13,10 @@ public abstract class MotechBaseDataObject {
     }
 
     protected MotechBaseDataObject(String type) {
+        this.type = type;
+    }
+
+    public void setType(String type) {
         this.type = type;
     }
 

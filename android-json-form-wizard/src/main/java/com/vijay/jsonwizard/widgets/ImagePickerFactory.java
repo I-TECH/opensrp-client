@@ -10,15 +10,18 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.rey.material.util.ViewUtil;
 import com.vijay.jsonwizard.R;
 import com.vijay.jsonwizard.fragments.JsonFormFragment;
 import com.vijay.jsonwizard.interfaces.CommonListener;
 import com.vijay.jsonwizard.interfaces.FormWidgetFactory;
 import com.vijay.jsonwizard.interfaces.JsonApi;
+import com.vijay.jsonwizard.utils.FormUtils;
 import com.vijay.jsonwizard.utils.ImageUtils;
 import com.vijay.jsonwizard.utils.ValidationStatus;
 import com.vijay.jsonwizard.views.JsonFormFragmentView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -40,15 +43,19 @@ public class ImagePickerFactory implements FormWidgetFactory {
         String openMrsEntity = jsonObject.getString("openmrs_entity");
         String openMrsEntityId = jsonObject.getString("openmrs_entity_id");
         String relevance = jsonObject.optString("relevance");
+        JSONArray canvasIds = new JSONArray();
 
         List<View> views = new ArrayList<>(1);
         ImageView imageView = new ImageView(context);
+        imageView.setId(ViewUtil.generateViewId());
+        canvasIds.put(imageView.getId());
         imageView.setImageDrawable(context.getResources().getDrawable(R.mipmap.grey_bg));
         imageView.setTag(R.id.key, jsonObject.getString("key"));
         imageView.setTag(R.id.openmrs_entity_parent, openMrsEntityParent);
         imageView.setTag(R.id.openmrs_entity, openMrsEntity);
         imageView.setTag(R.id.openmrs_entity_id, openMrsEntityId);
         imageView.setTag(R.id.type, jsonObject.getString("type"));
+        imageView.setTag(R.id.address,  stepName + ":" + jsonObject.getString("key"));
         if (relevance != null && context instanceof JsonApi) {
             imageView.setTag(R.id.relevance, relevance);
             ((JsonApi) context).addSkipLogicView(imageView);
@@ -71,14 +78,26 @@ public class ImagePickerFactory implements FormWidgetFactory {
         if (!TextUtils.isEmpty(imagePath)) {
             imageView.setTag(R.id.imagePath, imagePath);
             imageView.setImageBitmap(ImageUtils.loadBitmapFromFile(context, imagePath, ImageUtils.getDeviceWidth(context), dpToPixels(context, 200)));
-            if (jsonObject.has("read_only")) {
-                boolean readOnly = jsonObject.getBoolean("read_only");
-                uploadButton.setEnabled(!readOnly);
-            }
         }
+
+        if (jsonObject.has("read_only")) {
+            boolean readOnly = jsonObject.getBoolean("read_only");
+            uploadButton.setEnabled(!readOnly);
+            uploadButton.setFocusable(!readOnly);
+        }
+
+        ((JsonApi) context).addFormDataView(imageView);
         views.add(imageView);
 
         uploadButton.setText(jsonObject.getString("uploadButtonText"));
+        uploadButton.setTextColor(context.getResources().getColor(android.R.color.white));
+        uploadButton.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                context.getResources().getDimension(R.dimen.button_text_size));
+        uploadButton.setPadding(
+                context.getResources().getDimensionPixelSize(R.dimen.button_padding),
+                context.getResources().getDimensionPixelSize(R.dimen.button_padding),
+                context.getResources().getDimensionPixelSize(R.dimen.button_padding),
+                context.getResources().getDimensionPixelSize(R.dimen.button_padding));
         uploadButton.setLayoutParams(getLayoutParams(WRAP_CONTENT, WRAP_CONTENT, 0, 0, 0, (int) context
                 .getResources().getDimension(R.dimen.default_bottom_margin)));
         uploadButton.setOnClickListener(listener);
@@ -92,6 +111,10 @@ public class ImagePickerFactory implements FormWidgetFactory {
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setMargins(0, 0, 0, dp2px(context, 20));
         uploadButton.setLayoutParams(params);
+
+        uploadButton.setId(ViewUtil.generateViewId());
+        canvasIds.put(uploadButton.getId());
+        uploadButton.setTag(R.id.canvas_ids, canvasIds.toString());
 
         views.add(uploadButton);
         if (relevance != null && context instanceof JsonApi) {

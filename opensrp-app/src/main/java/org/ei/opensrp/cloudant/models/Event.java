@@ -43,6 +43,7 @@ public class Event extends org.ei.opensrp.clientandeventmodel.Event {
         setDateCreated(event.getDateCreated());
         setVoided(event.getVoided());
         setBaseEntityId(event.getBaseEntityId());
+        setIdentifiers(event.getIdentifiers());
         setEditor(event.getEditor());
         setCreator(event.getCreator());
         setDateEdited(event.getDateEdited());
@@ -65,6 +66,7 @@ public class Event extends org.ei.opensrp.clientandeventmodel.Event {
     public static final String date_created_key = "dateCreated";
     public static final String voided_key = "voided";
     public static final String base_entity_id_key = "baseEntityId";
+    public static final String identifiers_key = "identifiers";
     public static final String editor_key = "editor";
     public static final String creator_key = "creator";
     public static final String date_edited_key = "dateEdited";
@@ -151,6 +153,8 @@ public class Event extends org.ei.opensrp.clientandeventmodel.Event {
             map.put(voided_key, getVoided());
         if (getBaseEntityId() != null)
             map.put(base_entity_id_key, getBaseEntityId());
+        if (getIdentifiers() != null)
+            map.put(identifiers_key, getIdentifiers());
         if (getEditor() != null)
             map.put(editor_key, getEditor());
         if (getCreator() != null)

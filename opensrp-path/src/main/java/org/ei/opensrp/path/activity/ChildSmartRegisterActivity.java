@@ -1,6 +1,5 @@
 package org.ei.opensrp.path.activity;
 
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,12 +8,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.widget.Toast;
-
-import com.vijay.jsonwizard.activities.JsonFormActivity;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.LinearLayout;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ei.opensrp.adapter.SmartRegisterPaginatedAdapter;
@@ -23,24 +24,20 @@ import org.ei.opensrp.domain.form.FormSubmission;
 import org.ei.opensrp.event.Event;
 import org.ei.opensrp.event.Listener;
 import org.ei.opensrp.path.R;
-import org.ei.opensrp.path.adapter.BaseRegisterActivityPagerAdapter;
+import org.ei.opensrp.path.adapter.PathRegisterActivityPagerAdapter;
+import org.ei.opensrp.path.fragment.AdvancedSearchFragment;
 import org.ei.opensrp.path.fragment.BaseSmartRegisterFragment;
 import org.ei.opensrp.path.fragment.ChildSmartRegisterFragment;
 import org.ei.opensrp.path.receiver.ServiceReceiver;
 import org.ei.opensrp.path.view.LocationPickerView;
 import org.ei.opensrp.provider.SmartRegisterClientsProvider;
 import org.ei.opensrp.repository.AllSharedPreferences;
-import org.ei.opensrp.repository.UniqueIdRepository;
 import org.ei.opensrp.service.FormSubmissionService;
 import org.ei.opensrp.service.ZiggyService;
 import org.ei.opensrp.util.FormUtils;
 import org.ei.opensrp.view.dialog.DialogOptionModel;
 import org.ei.opensrp.view.viewpager.OpenSRPViewPager;
-import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -48,6 +45,8 @@ import util.JsonFormUtils;
 import util.barcode.Barcode;
 import util.barcode.BarcodeIntentIntegrator;
 import util.barcode.BarcodeIntentResult;
+
+import static android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS;
 
 /**
  * Created by Ahmed on 13-Oct-15.
@@ -59,10 +58,12 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
     OpenSRPViewPager mPager;
     private FragmentPagerAdapter mPagerAdapter;
     private static final int REQUEST_CODE_GET_JSON = 3432;
+    private static final int REQUEST_CODE_RECORD_OUT_OF_CATCHMENT = 1131;
     private int currentPage;
+    public static final int ADVANCED_SEARCH_POSITION = 1;
 
-    private String[] formNames = new String[]{};
     private android.support.v4.app.Fragment mBaseFragment = null;
+    private AdvancedSearchFragment advancedSearchFragment;
 
     private ServiceReceiver receiver;
 
@@ -75,18 +76,18 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        formNames = this.buildFormNameList();
         mBaseFragment = new ChildSmartRegisterFragment();
+        advancedSearchFragment = new AdvancedSearchFragment();
+        Fragment[] otherFragments = {new AdvancedSearchFragment()};
 
         // Instantiate a ViewPager and a PagerAdapter.
-        mPagerAdapter = new BaseRegisterActivityPagerAdapter(getSupportFragmentManager(), formNames, mBaseFragment);
-        mPager.setOffscreenPageLimit(formNames.length);
+        mPagerAdapter = new PathRegisterActivityPagerAdapter(getSupportFragmentManager(), mBaseFragment, otherFragments);
+        mPager.setOffscreenPageLimit(otherFragments.length);
         mPager.setAdapter(mPagerAdapter);
         mPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
                 currentPage = position;
-                onPageChanged(position);
             }
         });
 
@@ -98,16 +99,6 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
     protected void onDestroy() {
         super.onDestroy();
         Event.ON_DATA_FETCHED.removeListener(onDataFetchedListener);
-    }
-
-    private String[] buildFormNameList() {
-        List<String> formNames = new ArrayList<String>();
-        return formNames.toArray(new String[formNames.size()]);
-    }
-
-
-    public void onPageChanged(int page) {
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
     @Override
@@ -126,6 +117,10 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
 
     @Override
     protected void onResumption() {
+        final DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        LinearLayout childregister = (LinearLayout) drawer.findViewById(R.id.child_register);
+        childregister.setBackgroundColor(getResources().getColor(R.color.tintcolor));
+
     }
 
     @Override
@@ -159,43 +154,32 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
     @Override
     public void startFormActivity(String formName, String entityId, String metaData) {
         try {
-            if (StringUtils.isBlank(entityId)) {
-                UniqueIdRepository uniqueIdRepo = context().uniqueIdRepository();
-                entityId = uniqueIdRepo.getNextUniqueId() != null ? uniqueIdRepo.getNextUniqueId().getOpenmrsId() : "";
-                if (entityId.isEmpty()) {
-                    Toast.makeText(this, getString(R.string.no_openmrs_id), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            }
-
-            JSONObject form = FormUtils.getInstance(getApplicationContext()).getFormJson(formName);
-            if(mBaseFragment instanceof ChildSmartRegisterFragment) {
+            if (mBaseFragment instanceof ChildSmartRegisterFragment) {
                 LocationPickerView locationPickerView = ((ChildSmartRegisterFragment) mBaseFragment).getLocationPickerView();
-                JsonFormUtils.addChildRegLocHierarchyQuestions(form, locationPickerView.getSelectedItem(), context());
-                if (form != null) {
-                    Intent intent = new Intent(getApplicationContext(), JsonFormActivity.class);
-                    //inject zeir id into the form
-                    JSONObject stepOne = form.getJSONObject(JsonFormUtils.STEP1);
-                    JSONArray jsonArray = stepOne.getJSONArray(JsonFormUtils.FIELDS);
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        if (jsonObject.getString(JsonFormUtils.KEY).equalsIgnoreCase(JsonFormUtils.ZEIR_ID)) {
-                            jsonObject.remove(JsonFormUtils.VALUE);
-                            if(StringUtils.isNotBlank(entityId)) {
-                                entityId = entityId.replace("-", "");
-                            }
-                            jsonObject.put(JsonFormUtils.VALUE, entityId);
-                            continue;
-                        }
-                    }
-                    intent.putExtra("json", form.toString());
-                    startActivityForResult(intent, REQUEST_CODE_GET_JSON);
-                }
+                String locationId = JsonFormUtils.getOpenMrsLocationId(context(), locationPickerView.getSelectedItem());
+                JsonFormUtils.startForm(this, context(), REQUEST_CODE_GET_JSON, formName, entityId,
+                        metaData, locationId);
             }
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(TAG, Log.getStackTraceString(e));
         }
 
+    }
+
+    public void startAdvancedSearch() {
+        try {
+            mPager.setCurrentItem(ADVANCED_SEARCH_POSITION, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void updateAdvancedSearchFilterCount(int count) {
+        AdvancedSearchFragment advancedSearchFragment = (AdvancedSearchFragment) findFragmentByPosition(ADVANCED_SEARCH_POSITION);
+        if(advancedSearchFragment != null){
+            advancedSearchFragment.updateFilterCount(count);
+        }
     }
 
     @Override
@@ -209,9 +193,9 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
                 SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
                 AllSharedPreferences allSharedPreferences = new AllSharedPreferences(preferences);
 
-                JsonFormUtils.save(this, context(), jsonString, allSharedPreferences.fetchRegisteredANM(), "Child_Photo", "child", "mother");
+                JsonFormUtils.saveForm(this, context(), jsonString, allSharedPreferences.fetchRegisteredANM());
             }
-        } else if (requestCode == BarcodeIntentIntegrator.REQUEST_CODE) {
+        } else if (requestCode == BarcodeIntentIntegrator.REQUEST_CODE && resultCode == RESULT_OK) {
             BarcodeIntentResult res = BarcodeIntentIntegrator.parseActivityResult(requestCode, resultCode, data);
             if (StringUtils.isNotBlank(res.getContents())) {
                 onQRCodeSucessfullyScanned(res.getContents());
@@ -238,7 +222,7 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
             switchToBaseFragment(formSubmission); // Unnecessary!! passing on data
 
         } catch (Exception e) {
-           Log.e(TAG, e.getMessage(), e);
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
@@ -256,20 +240,25 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
 
     @Override
     public void onBackPressed() {
+        BaseSmartRegisterFragment registerFragment = (BaseSmartRegisterFragment) findFragmentByPosition(currentPage);
+        if (registerFragment.onBackPressed()) {
+            return;
+        }
         if (currentPage != 0) {
-            new AlertDialog.Builder(this)
+            new AlertDialog.Builder(this, R.style.PathAlertDialog)
                     .setMessage(org.ei.opensrp.path.R.string.form_back_confirm_dialog_message)
                     .setTitle(org.ei.opensrp.path.R.string.form_back_confirm_dialog_title)
                     .setCancelable(false)
-                    .setPositiveButton(org.ei.opensrp.path.R.string.yes_button_label,
+                    .setPositiveButton(org.ei.opensrp.path.R.string.no_button_label,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+
+                                }
+                            })
+                    .setNegativeButton(org.ei.opensrp.path.R.string.yes_button_label,
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int whichButton) {
                                     switchToBaseFragment(null);
-                                }
-                            })
-                    .setNegativeButton(org.ei.opensrp.path.R.string.no_button_label,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
                                 }
                             })
                     .show();
@@ -298,6 +287,16 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
         integ.initiateScan();
     }
 
+    public void filterSelection() {
+        if(currentPage != 0){
+            switchToBaseFragment(null);
+            BaseSmartRegisterFragment registerFragment = (BaseSmartRegisterFragment) findFragmentByPosition(0);
+            if (registerFragment != null && registerFragment instanceof ChildSmartRegisterFragment) {
+                ((ChildSmartRegisterFragment)registerFragment).triggerFilterSelection();
+            }
+        }
+    }
+
     private void onQRCodeSucessfullyScanned(String qrCode) {
         Log.i(getClass().getName(), "QR code: " + qrCode);
         if (StringUtils.isNotBlank(qrCode)) {
@@ -312,7 +311,7 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
         }
     };
 
-    private void refreshList(final FetchStatus fetchStatus) {
+    public void refreshList(final FetchStatus fetchStatus) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             BaseSmartRegisterFragment registerFragment = (BaseSmartRegisterFragment) findFragmentByPosition(0);
             if (registerFragment != null && fetchStatus.equals(FetchStatus.fetched)) {
@@ -347,5 +346,11 @@ public class ChildSmartRegisterActivity extends BaseRegisterActivity {
             registerFragment.openVaccineCard(filterString);
         }
     }
+
+    public void hideKeyboard() {
+        InputMethodManager inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), HIDE_NOT_ALWAYS);
+    }
+
 
 }

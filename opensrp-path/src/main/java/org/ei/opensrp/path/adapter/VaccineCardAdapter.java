@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.ei.opensrp.domain.Vaccine;
 import org.ei.opensrp.path.domain.Photo;
 import org.ei.opensrp.path.domain.VaccineWrapper;
 import org.ei.opensrp.path.view.VaccineCard;
@@ -18,10 +17,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import util.ImageUtils;
 import util.Utils;
@@ -80,6 +76,7 @@ public class VaccineCardAdapter extends BaseAdapter {
                 vaccineWrapper.setId(vaccineGroup.getChildDetails().entityId());
                 vaccineWrapper.setGender(vaccineGroup.getChildDetails().getDetails().get("gender"));
                 vaccineWrapper.setName(vaccineName);
+                vaccineWrapper.setDefaultName(vaccineName);
 
                 String dobString = Utils.getValue(vaccineGroup.getChildDetails().getColumnmaps(), "dob", false);
                 if (StringUtils.isNotBlank(dobString)) {
@@ -90,24 +87,29 @@ public class VaccineCardAdapter extends BaseAdapter {
                     vaccineWrapper.setVaccineDate(new DateTime(dobCalender.getTime()));
                 }
 
-
                 Photo photo = ImageUtils.profilePhotoByClient(vaccineGroup.getChildDetails());
                 vaccineWrapper.setPhoto(photo);
 
                 String zeirId = getValue(vaccineGroup.getChildDetails().getColumnmaps(), "zeir_id", false);
                 vaccineWrapper.setPatientNumber(zeirId);
 
-                String firstName =getValue(vaccineGroup.getChildDetails().getColumnmaps(), "first_name", true);
+                String firstName = getValue(vaccineGroup.getChildDetails().getColumnmaps(), "first_name", true);
                 String lastName = getValue(vaccineGroup.getChildDetails().getColumnmaps(), "last_name", true);
-                String childName =  getName(firstName, lastName);
+                String childName = getName(firstName, lastName);
                 vaccineWrapper.setPatientName(childName.trim());
 
-                updateWrapper(vaccineWrapper);
+                vaccineGroup.updateWrapper(vaccineWrapper);
+                vaccineGroup.updateWrapperStatus(vaccineWrapper);
                 vaccineCard.setVaccineWrapper(vaccineWrapper);
 
                 vaccineCards.put(vaccineName, vaccineCard);
+            }
+
+            //If last position, toggle RecordAll
+            if (position == (getCount() - 1)) {
                 vaccineGroup.toggleRecordAllTV();
             }
+
 
             return vaccineCards.get(vaccineName);
         } catch (JSONException e) {
@@ -117,10 +119,18 @@ public class VaccineCardAdapter extends BaseAdapter {
         return null;
     }
 
-    public void update() {
+    public void update(ArrayList<VaccineWrapper> vaccinesToUpdate) {
         if (vaccineCards != null) {
-            for (VaccineCard curCard : vaccineCards.values()) {
-                if (curCard != null) curCard.updateState();
+            if (vaccinesToUpdate == null) {// Update all vaccines
+                for (VaccineCard curCard : vaccineCards.values()) {
+                    if (curCard != null) curCard.updateState();
+                }
+            } else {// Update just the vaccines specified
+                for (VaccineWrapper currWrapper : vaccinesToUpdate) {
+                    if (vaccineCards.containsKey(currWrapper.getName())) {
+                        vaccineCards.get(currWrapper.getName()).setVaccineWrapper(currWrapper);
+                    }
+                }
             }
         }
     }
@@ -139,22 +149,13 @@ public class VaccineCardAdapter extends BaseAdapter {
         return dueVaccines;
     }
 
-    private void updateWrapper(VaccineWrapper tag) {
-        List<Vaccine> vaccineList = vaccineGroup.getVaccineList();
-        if (!vaccineList.isEmpty()) {
-            for (Vaccine vaccine : vaccineList) {
-                if (tag.getName().equals(vaccine.getName()) && vaccine.getDate() != null) {
-                    long diff = vaccine.getUpdatedAt() - vaccine.getDate().getTime();
-                    if (diff > 0 && TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) > 1) {
-                        tag.setUpdatedVaccineDate(new DateTime(vaccine.getDate()), false);
-                    } else {
-                        tag.setUpdatedVaccineDate(new DateTime(vaccine.getDate()), true);
-                    }
-                    tag.setRecordedDate(new DateTime(new Date(vaccine.getUpdatedAt())));
-                    tag.setDbKey(vaccine.getId());
-                }
-            }
+    public ArrayList<VaccineWrapper> getAllVaccineWrappers() {
+        ArrayList<VaccineWrapper> allWrappers = new ArrayList<>();
+        for (VaccineCard curCard : vaccineCards.values()) {
+            allWrappers.add(curCard.getVaccineWrapper());
         }
 
+        return allWrappers;
     }
+
 }

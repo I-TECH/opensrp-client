@@ -18,6 +18,8 @@ public class Event extends BaseDataObject{
     @JsonProperty
     private String baseEntityId;
     @JsonProperty
+    private Map<String, String> identifiers;
+    @JsonProperty
     private String locationId;
     @JsonProperty
     private Date eventDate;
@@ -62,6 +64,21 @@ public class Event extends BaseDataObject{
     public Event(String baseEntityId, String eventId, String eventType, Date eventDate, String entityType,
                  String providerId, String locationId, String formSubmissionId) {
         this.baseEntityId = baseEntityId;
+        this.identifiers = new HashMap<>();
+        this.eventId = eventId;
+        this.eventType = eventType;
+        this.eventDate = eventDate;
+        this.entityType = entityType;
+        this.providerId = providerId;
+        this.locationId = locationId;
+        this.formSubmissionId = formSubmissionId;
+        this.version = System.currentTimeMillis();
+    }
+
+    public Event(String baseEntityId, HashMap<String, String> identifiers, String eventId, String eventType, Date eventDate, String entityType,
+                 String providerId, String locationId, String formSubmissionId) {
+        this.baseEntityId = baseEntityId;
+        this.identifiers = identifiers;
         this.eventId = eventId;
         this.eventType = eventType;
         this.eventDate = eventDate;
@@ -99,6 +116,14 @@ public class Event extends BaseDataObject{
 
     public void setBaseEntityId(String baseEntityId) {
         this.baseEntityId = baseEntityId;
+    }
+
+    public Map<String, String> getIdentifiers() {
+        return identifiers;
+    }
+
+    public void setIdentifiers(Map<String, String> identifiers) {
+        this.identifiers = identifiers;
     }
 
     public String getLocationId() {
@@ -185,6 +210,11 @@ public class Event extends BaseDataObject{
         return this;
     }
 
+    public Event withIdentifiers(HashMap<String, String> identifiers) {
+        this.identifiers = identifiers;
+        return this;
+    }
+
     public Event withLocationId(String locationId) {
         this.locationId = locationId;
         return this;
@@ -248,5 +278,12 @@ public class Event extends BaseDataObject{
         return ToStringBuilder.reflectionToString(this);
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
 

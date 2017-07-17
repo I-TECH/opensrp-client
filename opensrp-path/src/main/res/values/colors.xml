@@ -5,6 +5,8 @@
     <color name="silver">#A9A9A9</color>
     <color name="light_grey">#CCCCCC</color>
     <color name="dark_grey">#999999</color>
+    <color name="transparent_dark_grey">#EE999999</color>
+    <color name="inactive_grey">#B5B5B5</color>
 
     <!-- Gender identity colors -->
     <color name="gender_neutral_dark_green">#219e05</color>
@@ -21,7 +23,7 @@
     <color name="alert_upcoming">#D3EAF4</color>
     <color name="alert_normal">#389CCA</color>
     <color name="alert_urgent">#D13F3F</color>
-    <color name="alert_completed">#4FB45B</color>
+    <color name="alert_completed">#4fb45b</color>
     <color name="alert_expired">#ECECEC</color>
     <color name="primary">#358CB7</color>
     <color name="primary_background">#ddf0fa</color>
@@ -59,8 +61,24 @@
     <color name="vaccine_light_blue_bg_st">#e4f1f6</color>
     <color name="vaccine_light_blue_bg_end">#e3f0f5</color>
 
+    <color name="vaccine_na_bg_stk">#D4D4D4</color>
+    <color name="vaccine_na_bg_st">#EFEFEF</color>
+    <color name="vaccine_na_bg_end">#ECECEC</color>
+
     <color name="record_weight_grey_bg_stk">#d8d8d8</color>
     <color name="record_weight_grey_bg_st">#f4f4f4</color>
     <color name="record_weight_grey_bg_end">#ebebeb</color>
 
+    <color name="transparent_dark_blue">#ff196d99</color>
+
+    <color name="snackbar_background_yellow">#FFED18</color>
+    <color name="bluetext">#3D9EC9</color>
+    <color name="z_score_0">#227532</color>
+    <color name="z_score_2">#b1312c</color>
+    <color name="z_score_3">#222539</color>
+    <color name="growth_today_color">#008be6</color>
+
+    <color name="translucent_client_list_grey">#aa737373</color>
+    <color name="toolbar_grey">#494949</color>
+    <color name="snackbar_action_color">#eeff1c</color>
 </resources>

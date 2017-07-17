@@ -23,6 +23,7 @@ import com.rengwuxian.materialedittext.MaterialEditText;
 import com.vijay.jsonwizard.R;
 import com.vijay.jsonwizard.constants.JsonFormConstants;
 import com.vijay.jsonwizard.customviews.CheckBox;
+import com.vijay.jsonwizard.customviews.MaterialSpinner;
 import com.vijay.jsonwizard.customviews.RadioButton;
 import com.vijay.jsonwizard.fragments.JsonFormFragment;
 import com.vijay.jsonwizard.interactors.JsonFormInteractor;
@@ -46,8 +47,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import fr.ganfra.materialspinner.MaterialSpinner;
-
 import static com.vijay.jsonwizard.utils.FormUtils.dpToPixels;
 
 /**
@@ -60,11 +59,17 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
     private JSONObject mStepDetails;
     private String mCurrentKey;
     private String mCurrentPhotoPath;
-    private JsonFormInteractor mJsonFormInteractor = JsonFormInteractor.getInstance();
+    private JsonFormInteractor mJsonFormInteractor;
     private final JsonFormFragment formFragment;
 
     public JsonFormFragmentPresenter(JsonFormFragment formFragment) {
         this.formFragment = formFragment;
+        mJsonFormInteractor = JsonFormInteractor.getInstance();
+    }
+
+    public JsonFormFragmentPresenter(JsonFormFragment formFragment, JsonFormInteractor jsonFormInteractor) {
+        this(formFragment);
+        mJsonFormInteractor = jsonFormInteractor;
     }
 
     public void addFormElements() {
@@ -113,10 +118,8 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
     }
 
     public ValidationStatus writeValuesAndValidate(LinearLayout mainView) {
-        int childCount = mainView.getChildCount();
         ValidationStatus firstError = null;
-        for (int i = 0; i < childCount; i++) {
-            View childAt = mainView.getChildAt(i);
+        for (View childAt : formFragment.getJsonApi().getFormDataViews()) {
             String key = (String) childAt.getTag(R.id.key);
             String openMrsEntityParent = (String) childAt.getTag(R.id.openmrs_entity_parent);
             String openMrsEntity = (String) childAt.getTag(R.id.openmrs_entity);
@@ -129,7 +132,13 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
 
             if (childAt instanceof MaterialEditText) {
                 MaterialEditText editText = (MaterialEditText) childAt;
-                getView().writeValue(mStepName, key, editText.getText().toString(),
+
+                String rawValue = (String) editText.getTag(R.id.raw_value);
+                if (rawValue == null) {
+                    rawValue = editText.getText().toString();
+                }
+
+                getView().writeValue(mStepName, key, rawValue,
                         openMrsEntityParent, openMrsEntity, openMrsEntityId);
             } else if (childAt instanceof ImageView) {
                 Object path = childAt.getTag(R.id.imagePath);
@@ -150,7 +159,8 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
                     getView().writeValue(mStepName, parentKey, childKey, openMrsEntityParent,
                             openMrsEntity, openMrsEntityId);
                 }
-            } else if (childAt instanceof MaterialSpinner) {}
+            } else if (childAt instanceof MaterialSpinner) {
+            }
         }
 
         if (firstError == null) {
@@ -271,6 +281,7 @@ public class JsonFormFragmentPresenter extends MvpBasePresenter<JsonFormFragment
     }
 
     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+        Log.d(TAG, "onCheckedChanged called");
         if (compoundButton instanceof CheckBox) {
             String parentKey = (String) compoundButton.getTag(R.id.key);
             String openMrsEntityParent = (String) compoundButton.getTag(R.id.openmrs_entity_parent);

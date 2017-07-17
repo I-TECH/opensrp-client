@@ -4,7 +4,6 @@ import android.content.SharedPreferences;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Set;
 
 import static org.ei.opensrp.AllConstants.CURRENT_LOCALITY;
 import static org.ei.opensrp.AllConstants.DEFAULT_LOCALE;
@@ -12,9 +11,11 @@ import static org.ei.opensrp.AllConstants.DEFAULT_LOCALITY_ID_PREFIX;
 import static org.ei.opensrp.AllConstants.DRISHTI_BASE_URL;
 import static org.ei.opensrp.AllConstants.ENCRYPTED_GROUP_ID_PREFIX;
 import static org.ei.opensrp.AllConstants.ENCRYPTED_PASSWORD_PREFIX;
+import static org.ei.opensrp.AllConstants.FORCE_REMOTE_LOGIN;
 import static org.ei.opensrp.AllConstants.IS_SYNC_IN_PROGRESS_PREFERENCE_KEY;
 import static org.ei.opensrp.AllConstants.LANGUAGE_PREFERENCE_KEY;
 import static org.ei.opensrp.AllConstants.PIONEER_USER;
+import static org.ei.opensrp.AllConstants.SERVER_TIMEZONE;
 import static org.ei.opensrp.util.Log.logError;
 import static org.ei.opensrp.util.Log.logInfo;
 
@@ -23,6 +24,7 @@ public class AllSharedPreferences {
     private static final String HOST = "HOST";
     private static final String PORT = "PORT";
     private static final String LAST_SYNC_DATE = "LAST_SYNC_DATE";
+    private static final String LAST_UPDATED_AT_DATE = "LAST_UPDATED_AT_DATE";
     private SharedPreferences preferences;
 
     public AllSharedPreferences(SharedPreferences preferences) {
@@ -35,6 +37,22 @@ public class AllSharedPreferences {
 
     public String fetchRegisteredANM() {
         return preferences.getString(ANM_IDENTIFIER_PREFERENCE_KEY, "").trim();
+    }
+
+    public boolean fetchForceRemoteLogin() {
+        return preferences.getBoolean(FORCE_REMOTE_LOGIN, true);
+    }
+
+    public void saveForceRemoteLogin(boolean forceRemoteLogin) {
+        preferences.edit().putBoolean(FORCE_REMOTE_LOGIN, forceRemoteLogin).commit();
+    }
+
+    public String fetchServerTimeZone() {
+        return preferences.getString(SERVER_TIMEZONE, null);
+    }
+
+    public void saveServerTimeZone(String serverTimeZone) {
+        preferences.edit().putString(SERVER_TIMEZONE, serverTimeZone).commit();
     }
 
     public String fetchEncryptedPassword(String username) {
@@ -110,7 +128,7 @@ public class AllSharedPreferences {
 
     public String fetchBaseURL(String baseurl){
 
-      return   preferences.getString(DRISHTI_BASE_URL,baseurl);
+      return   preferences.getString(DRISHTI_BASE_URL, baseurl);
     }
 
     public String fetchHost(String host){
@@ -126,7 +144,7 @@ public class AllSharedPreferences {
 
     public Integer fetchPort(Integer port){
 
-        return  Integer.parseInt( preferences.getString(PORT,""+port));
+        return  Integer.parseInt(preferences.getString(PORT, "" + port));
     }
 
     public Long fetchLastSyncDate(long lastSyncDate){
@@ -137,9 +155,22 @@ public class AllSharedPreferences {
     public void saveLastSyncDate(long lastSyncDate){
         preferences.edit().putLong(LAST_SYNC_DATE, lastSyncDate).commit();
     }
+    public Long fetchLastUpdatedAtDate(long lastSyncDate){
 
+        return  preferences.getLong(LAST_UPDATED_AT_DATE, lastSyncDate);
+    }
+
+    public void saveLastUpdatedAtDate(long lastSyncDate){
+        preferences.edit().putLong(LAST_UPDATED_AT_DATE, lastSyncDate).commit();
+    }
     public void savePort(Integer port){
         preferences.edit().putString(PORT, String.valueOf(port)).commit();
+    }
+    public void savePreference(String key, String value){
+        preferences.edit().putString(key, value).commit();
+    }
+    public String getPreference(String key){
+        return preferences.getString(key,"");
     }
     public void updateUrl(String baseUrl){
         try {

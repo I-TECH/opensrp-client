@@ -28,27 +28,28 @@ import org.ei.opensrp.path.listener.VaccinationActionListener;
 import org.ei.opensrp.util.OpenSRPImageLoader;
 import org.ei.opensrp.view.activity.DrishtiApplication;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+
 import util.ImageUtils;
 
 @SuppressLint("ValidFragment")
 public class UndoVaccinationDialogFragment extends DialogFragment {
-    private final Context context;
-    private final VaccineWrapper tag;
-    private final View viewGroup;
+    private VaccineWrapper tag;
     private VaccinationActionListener listener;
     public static final String DIALOG_TAG = "UndoVaccinationDialogFragment";
-
-    private UndoVaccinationDialogFragment(Context context,
-                                          VaccineWrapper tag, View viewGroup) {
-        this.context = context;
-        this.tag = tag;
-        this.viewGroup = viewGroup;
-    }
+    public static final String WRAPPER_TAG = "tag";
 
     public static UndoVaccinationDialogFragment newInstance(
-            Context context,
-            VaccineWrapper tag, View viewGroup) {
-        return new UndoVaccinationDialogFragment(context, tag, viewGroup);
+            VaccineWrapper tag) {
+
+        UndoVaccinationDialogFragment undoVaccinationDialogFragment = new UndoVaccinationDialogFragment();
+
+        Bundle args = new Bundle();
+        args.putSerializable(WRAPPER_TAG, tag);
+        undoVaccinationDialogFragment.setArguments(args);
+
+        return undoVaccinationDialogFragment;
     }
 
     @Override
@@ -60,6 +61,17 @@ public class UndoVaccinationDialogFragment extends DialogFragment {
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Bundle bundle = getArguments();
+        Serializable serializable = bundle.getSerializable(WRAPPER_TAG);
+        if (serializable != null && serializable instanceof VaccineWrapper) {
+            tag = (VaccineWrapper) serializable;
+        }
+
+        if (tag == null) {
+            return null;
+        }
+
         ViewGroup dialogView = (ViewGroup) inflater.inflate(R.layout.undo_vaccination_dialog_view, container, false);
         TextView nameView = (TextView) dialogView.findViewById(R.id.name);
         nameView.setText(tag.getPatientName());
@@ -89,9 +101,9 @@ public class UndoVaccinationDialogFragment extends DialogFragment {
             @Override
             public void onClick(View view) {
                 dismiss();
-                //updateFormSubmission();
 
-                listener.onUndoVaccination(tag, viewGroup);
+                tag.setName(tag.getDefaultName());
+                listener.onUndoVaccination(tag, view);
             }
         });
 
@@ -104,20 +116,6 @@ public class UndoVaccinationDialogFragment extends DialogFragment {
         });
 
         return dialogView;
-    }
-
-    private void updateFormSubmission() {
-        VaccinateFormSubmissionWrapper vaccinateFormSubmissionWrapper = null;
-        if (tag.getVaccine().category().equals("child") && listener instanceof ChildDetailActivity) {
-            vaccinateFormSubmissionWrapper = ((ChildDetailActivity) listener).getVaccinateFormSubmissionWrapper();
-        } else if (tag.getVaccine().category().equals("woman") && listener instanceof WomanDetailActivity) {
-            vaccinateFormSubmissionWrapper = ((WomanDetailActivity) listener).getVaccinateFormSubmissionWrapper();
-        }
-
-        if (vaccinateFormSubmissionWrapper != null) {
-            vaccinateFormSubmissionWrapper.remove(tag);
-        }
-
     }
 
     @Override

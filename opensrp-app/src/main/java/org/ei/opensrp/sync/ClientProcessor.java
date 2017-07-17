@@ -9,11 +9,11 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.apache.commons.lang3.StringUtils;
-import org.ei.drishti.dto.AlertStatus;
 import org.ei.opensrp.clientandeventmodel.DateUtil;
 import org.ei.opensrp.commonregistry.AllCommonsRepository;
 import org.ei.opensrp.commonregistry.CommonRepository;
 import org.ei.opensrp.domain.Alert;
+import org.ei.opensrp.domain.AlertStatus;
 import org.ei.opensrp.repository.AlertRepository;
 import org.ei.opensrp.repository.AllSharedPreferences;
 import org.ei.opensrp.repository.DetailsRepository;
@@ -38,11 +38,12 @@ public class ClientProcessor {
     private static ClientProcessor instance;
     private CloudantDataHandler mCloudantDataHandler;
     private static final String TAG = "ClientProcessor";
-    private static final String baseEntityIdJSONKey = "baseEntityId";
+    protected static final String baseEntityIdJSONKey = "baseEntityId";
+    protected static final String providerIdJSONKey = "providerId";
 
     private static final String detailsUpdated = "detailsUpdated";
 
-    private static final String VALUES_KEY = "values";
+    protected static final String VALUES_KEY = "values";
 
     private static final String[] openmrs_gen_ids = { "zeir_id" };
 
@@ -368,7 +369,7 @@ public class ClientProcessor {
             for (int i = 0; i < closesCase.length(); i++) {
                 String tableName = closesCase.getString(i);
                 closeCase(tableName, baseEntityId);
-                updateFTSsearch(tableName, baseEntityId);
+                updateFTSsearch(tableName, baseEntityId, null);
             }
             return true;
         } catch (JSONException e) {
@@ -504,7 +505,7 @@ public class ClientProcessor {
 
                 // save the values to db
                 Long id = executeInsertStatement(contentValues, clientType);
-                updateFTSsearch(clientType, baseEntityId);
+                updateFTSsearch(clientType, baseEntityId, contentValues);
                 Long timestamp = getEventDate(event.get("eventDate"));
                 addContentValuesToDetailsTable(contentValues, timestamp);
                 updateClientDetailsTable(event, client);
@@ -523,7 +524,7 @@ public class ClientProcessor {
      * @param values
      * @param eventDate
      */
-    private void addContentValuesToDetailsTable(ContentValues values, Long eventDate) {
+    protected void addContentValuesToDetailsTable(ContentValues values, Long eventDate) {
         try {
             String baseEntityId = values.getAsString("base_entity_id");
             Iterator<String> it = values.keySet().iterator();
@@ -678,7 +679,7 @@ public class ClientProcessor {
      * @return
      * @throws Exception
      */
-    private String getHumanReadableConceptResponse(String value, JSONObject jsonDocObject) throws Exception {
+    protected String getHumanReadableConceptResponse(String value, JSONObject jsonDocObject) throws Exception {
 
         JSONArray humanReadableValues = jsonDocObject.has("humanReadableValues") ? jsonDocObject.getJSONArray("humanReadableValues") : null;
 
@@ -801,6 +802,11 @@ public class ClientProcessor {
         cr.closeCase(baseEntityId, tableName);
     }
 
+    public boolean deleteCase(String tableName, String baseEntityId) {
+        CommonRepository cr = org.ei.opensrp.Context.getInstance().commonrepository(tableName);
+        return cr.deleteCase(baseEntityId, tableName);
+    }
+
     public void executeInsertAlert(ContentValues contentValues) {
         if (!contentValues.getAsString(AlertRepository.ALERTS_STATUS_COLUMN).isEmpty()) {
             Alert alert = new Alert(contentValues.getAsString(AlertRepository.ALERTS_CASEID_COLUMN), contentValues.getAsString(AlertRepository.ALERTS_SCHEDULE_NAME_COLUMN), contentValues.getAsString(AlertRepository.ALERTS_VISIT_CODE_COLUMN), AlertStatus.from(contentValues.getAsString(AlertRepository.ALERTS_STATUS_COLUMN)), contentValues.getAsString(AlertRepository.ALERTS_STARTDATE_COLUMN), contentValues.getAsString(AlertRepository.ALERTS_EXPIRYDATE_COLUMN));
@@ -838,18 +844,18 @@ public class ClientProcessor {
         return null;
     }
 
-    private String getFileContents(String fileName) {
+    protected String getFileContents(String fileName) {
         return AssetHandler.readFileFromAssetsFolder(fileName, mContext);
     }
 
-    private List<String> getValues(Object jsonObject) throws JSONException {
+    protected List<String> getValues(Object jsonObject) throws JSONException {
         List<String> values = new ArrayList<String>();
         if (jsonObject == null) {
             return values;
         } else if (jsonObject instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) jsonObject;
             for (int i = 0; i < jsonArray.length(); i++) {
-                values.add((String) jsonArray.get(i));
+                values.add(jsonArray.get(i).toString());
             }
         } else {
             values.add(jsonObject.toString());
@@ -868,7 +874,7 @@ public class ClientProcessor {
         return new Date().getTime();
     }
 
-    public void updateFTSsearch(String tableName, String entityId) {
+    public void updateFTSsearch(String tableName, String entityId, ContentValues contentValues) {
         Log.i(TAG, "Starting updateFTSsearch table: " + tableName);
         AllCommonsRepository allCommonsRepository = org.ei.opensrp.Context.getInstance().allCommonsRepositoryobjects(tableName);
         if (allCommonsRepository != null) {
@@ -895,7 +901,7 @@ public class ClientProcessor {
         this.mCloudantDataHandler = mCloudantDataHandler;
     }
 
-    private boolean isNullOrEmptyJSONObject(JSONObject jsonObject) {
+    protected boolean isNullOrEmptyJSONObject(JSONObject jsonObject) {
         return (jsonObject == null || jsonObject.length() == 0);
     }
 
@@ -923,5 +929,9 @@ public class ClientProcessor {
         } catch (Exception e) {
 
         }
+    }
+
+    public Context getContext() {
+        return mContext;
     }
 }

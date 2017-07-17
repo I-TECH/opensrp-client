@@ -1,6 +1,7 @@
 package org.ei.opensrp.path.fragment.table;
 
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -16,7 +17,8 @@ public class WomanVaccineTable extends Fragment {
 
     private CommonPersonObject pregnantWomanObject;
 
-
+   public WomanVaccineTable(){}
+    @SuppressLint("ValidFragment")
     public WomanVaccineTable(CommonPersonObject pregnantWomanObject) {
       this.pregnantWomanObject=pregnantWomanObject;
     }

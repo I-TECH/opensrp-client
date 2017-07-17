@@ -30,7 +30,7 @@ public class LabelFactory implements FormWidgetFactory {
         List<View> views = new ArrayList<>(1);
         LinearLayout.LayoutParams layoutParams = getLayoutParams(WRAP_CONTENT, WRAP_CONTENT, 0, 0, 0, (int) context
                 .getResources().getDimension(R.dimen.default_bottom_margin));
-        views.add(getTextViewWith(context, 20, jsonObject.getString("text"), jsonObject.getString("key"),
+        views.add(getTextViewWith(context, 27, jsonObject.getString("text"), jsonObject.getString("key"),
                 jsonObject.getString("type"), openMrsEntityParent, openMrsEntity, openMrsEntityId,
                 relevance, layoutParams, FONT_BOLD_PATH));
         return views;

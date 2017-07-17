@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
 
 import com.rengwuxian.materialedittext.MaterialEditText;
 import com.rey.material.util.ViewUtil;
@@ -34,6 +36,8 @@ import static android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS;
  * @since 07/02/2017
  */
 public class TreeViewFactory implements FormWidgetFactory {
+    private static final String TAG = "TreeViewFactory";
+
     @Override
     public List<View> getViewsFromJson(String stepName, final Context context, JsonFormFragment formFragment, JSONObject
             jsonObject, CommonListener listener) throws Exception {
@@ -45,8 +49,12 @@ public class TreeViewFactory implements FormWidgetFactory {
             String relevance = jsonObject.optString("relevance");
             String constraints = jsonObject.optString("constraints");
 
-            final MaterialEditText editText = (MaterialEditText) LayoutInflater.from(context).inflate(
+            JSONArray canvasIds = new JSONArray();
+            RelativeLayout rootLayout = (RelativeLayout) LayoutInflater.from(context).inflate(
                     R.layout.item_edit_text, null);
+            rootLayout.setId(ViewUtil.generateViewId());
+            canvasIds.put(rootLayout.getId());
+            final MaterialEditText editText = (MaterialEditText) rootLayout.findViewById(R.id.edit_text);
             editText.setHint(jsonObject.getString("hint"));
             editText.setFloatingLabelText(jsonObject.getString("hint"));
             editText.setId(ViewUtil.generateViewId());
@@ -54,6 +62,7 @@ public class TreeViewFactory implements FormWidgetFactory {
             editText.setTag(R.id.openmrs_entity_parent, openMrsEntityParent);
             editText.setTag(R.id.openmrs_entity, openMrsEntity);
             editText.setTag(R.id.openmrs_entity_id, openMrsEntityId);
+            editText.setTag(R.id.address, stepName + ":" + jsonObject.getString("key"));
             if (jsonObject.has("v_required")) {
                 JSONObject requiredObject = jsonObject.optJSONObject("v_required");
                 String requiredValue = requiredObject.getString("value");
@@ -64,13 +73,12 @@ public class TreeViewFactory implements FormWidgetFactory {
                 }
             }
             final String defaultValueString = jsonObject.optString("default");
+            final String valueString = jsonObject.optString("value");
 
-            if (!TextUtils.isEmpty(jsonObject.optString("value"))) {
-                editText.setText(jsonObject.optString("value"));
-                if (jsonObject.has("read_only")) {
-                    boolean readOnly = jsonObject.getBoolean("read_only");
-                    editText.setEnabled(!readOnly);
-                }
+            if (jsonObject.has("read_only")) {
+                boolean readOnly = jsonObject.getBoolean("read_only");
+                editText.setEnabled(!readOnly);
+                editText.setFocusable(!readOnly);
             }
 
             ArrayList<String> defaultValue = new ArrayList<>();
@@ -79,11 +87,26 @@ public class TreeViewFactory implements FormWidgetFactory {
                 for (int i = 0; i < jsonArray.length(); i++) {
                     defaultValue.add(jsonArray.getString(i));
                 }
-            } catch (JSONException e){
+            } catch (JSONException e) {
             }
 
+            ArrayList<String> value = new ArrayList<>();
+            try {
+                JSONArray jsonArray = new JSONArray(valueString);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    value.add(jsonArray.getString(i));
+                }
+            } catch (JSONException e) {
+            }
+
+
             final TreeViewDialog treeViewDialog = new TreeViewDialog(context,
-                    jsonObject.getJSONArray("tree"), defaultValue);
+                    jsonObject.getJSONArray("tree"), defaultValue, value);
+
+            if (!TextUtils.isEmpty(jsonObject.optString("value"))) {
+                JSONArray name = new JSONArray(treeViewDialog.getName());
+                changeEditTextValue(editText, jsonObject.optString("value"), name.toString());
+            }
 
             treeViewDialog.setOnShowListener(new DialogInterface.OnShowListener() {
                 @Override
@@ -101,8 +124,8 @@ public class TreeViewFactory implements FormWidgetFactory {
                     ArrayList<String> value = treeViewDialog.getValue();
                     if (value != null && value.size() > 0) {
                         JSONArray array = new JSONArray(value);
-                        Log.d("TreeQ", array.toString());
-                        editText.setText(array.toString());
+                        JSONArray name = new JSONArray(treeViewDialog.getName());
+                        changeEditTextValue(editText, array.toString(), name.toString());
                     }
                 }
             });
@@ -117,7 +140,7 @@ public class TreeViewFactory implements FormWidgetFactory {
             editText.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    editText.setText("");
+                    changeEditTextValue(editText, "", "");
                     return true;
                 }
             });
@@ -139,11 +162,12 @@ public class TreeViewFactory implements FormWidgetFactory {
             }
             if (constraints != null && context instanceof JsonApi) {
                 editText.setTag(R.id.constraints, constraints);
-                editText.setTag(R.id.address, stepName + ":" + jsonObject.getString("key"));
                 ((JsonApi) context).addConstrainedView(editText);
             }
+            editText.setTag(R.id.canvas_ids, canvasIds.toString());
 
-            views.add(editText);
+            ((JsonApi) context).addFormDataView(editText);
+            views.add(rootLayout);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -152,16 +176,28 @@ public class TreeViewFactory implements FormWidgetFactory {
     }
 
     private static void showTreeDialog(MaterialEditText editText, TreeViewDialog treeViewDialog) {
-        ArrayList<String> data = new ArrayList<>();
-        try {
-            JSONArray jsonArray = new JSONArray(editText.getText().toString());
-            for (int i = 0; i < jsonArray.length(); i++) {
-                data.add(jsonArray.getString(i));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        treeViewDialog.setValue(data);
         treeViewDialog.show();
+    }
+
+    private static void changeEditTextValue(EditText editText, String value, String name) {
+        String readableValue = "";
+        editText.setTag(R.id.raw_value, value);
+        if (!TextUtils.isEmpty(name)) {
+            try {
+                JSONArray nameArray = new JSONArray(name);
+                if (nameArray.length() > 0) {
+                    readableValue = nameArray.getString(nameArray.length() - 1);
+
+                    if (nameArray.length() > 1) {
+                        readableValue = readableValue + ", "
+                                + nameArray.getString(nameArray.length() - 2);
+                    }
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, Log.getStackTraceString(e));
+            }
+        }
+
+        editText.setText(readableValue);
     }
 }

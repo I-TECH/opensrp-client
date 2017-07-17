@@ -17,6 +17,10 @@ import java.util.Map;
  */
 public class Client extends org.ei.opensrp.clientandeventmodel.Client {
 
+    public void setRev(DocumentRevision rev) {
+        this.rev = rev;
+    }
+
     // this is the revision in the database representing this task
     private DocumentRevision rev;
 
@@ -25,15 +29,7 @@ public class Client extends org.ei.opensrp.clientandeventmodel.Client {
     }
 
     static final String DOC_TYPE = "Client";
-    private String type = DOC_TYPE;
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 
     public Client() {
     }
@@ -62,7 +58,7 @@ public class Client extends org.ei.opensrp.clientandeventmodel.Client {
         setEditor(client.getEditor());
         setRelationalBaseEntityId(client.getRelationalBaseEntityId());
         setRelationships(client.getRelationships());
-        setType(type);
+        setType(DOC_TYPE);
     }
 
     public static final String type_key = "type";
@@ -94,7 +90,7 @@ public class Client extends org.ei.opensrp.clientandeventmodel.Client {
         // this could also be done by a fancy object mapper
         Map<String, Object> map = rev.asMap();
         if (map.containsKey(type_key) && map.get(type_key).equals(Client.DOC_TYPE)) {
-            client.setType((String) map.get(type_key));
+            //client.setType((String) map.get(type_key));
             if (map.get(addresses_key) != null)
                 client.setAddresses((List<Address>) map.get(addresses_key));
             if (map.get(attributes_key) != null)

@@ -6,9 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import org.ei.drishti.dto.form.FormSubmissionDTO;
-import org.ei.opensrp.Context;
 import org.ei.opensrp.DristhiConfiguration;
-import org.ei.opensrp.sync.CloudantSyncHandler;
 import org.ei.opensrp.domain.FetchStatus;
 import org.ei.opensrp.domain.Response;
 import org.ei.opensrp.domain.form.FormSubmission;
@@ -19,7 +17,6 @@ import org.ei.opensrp.view.activity.DrishtiApplication;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import static java.text.MessageFormat.format;
 import static org.ei.opensrp.convertor.FormSubmissionConvertor.toDomain;
@@ -52,13 +49,13 @@ public class FormSubmissionSyncService {
 
     public FetchStatus sync() {
         try{
-            CloudantSyncHandler mCloudantSyncHandler = CloudantSyncHandler.getInstance(Context.getInstance().applicationContext());
-            CountDownLatch mCountDownLatch = new CountDownLatch(2);
-            mCloudantSyncHandler.setCountDownLatch(mCountDownLatch);
-            mCloudantSyncHandler.startPullReplication();
-            mCloudantSyncHandler.startPushReplication();
+//            CloudantSyncHandler mCloudantSyncHandler = CloudantSyncHandler.getInstance(Context.getInstance().applicationContext());
+//            CountDownLatch mCountDownLatch = new CountDownLatch(2);
+//            mCloudantSyncHandler.setCountDownLatch(mCountDownLatch);
+//            mCloudantSyncHandler.startPullReplication();
+//            mCloudantSyncHandler.startPushReplication();
 
-            mCountDownLatch.await();
+  //          mCountDownLatch.await();
             //pushToServer();
             Intent intent = new Intent(DrishtiApplication.getInstance().getApplicationContext(),ImageUploadSyncService.class);
             DrishtiApplication.getInstance().getApplicationContext().startService(intent);

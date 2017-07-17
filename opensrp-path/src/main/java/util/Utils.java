@@ -16,16 +16,20 @@
 
 package util;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.text.Html;
 import android.text.InputType;
 import android.text.Spanned;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -44,7 +48,7 @@ import com.squareup.picasso.Picasso;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
-import org.ei.drishti.dto.AlertStatus;
+import org.ei.opensrp.domain.AlertStatus;
 import org.ei.opensrp.commonregistry.CommonPersonObjectClient;
 import org.ei.opensrp.domain.ProfileImage;
 import org.ei.opensrp.path.domain.EditWrapper;
@@ -54,13 +58,19 @@ import org.joda.time.DateTime;
 import org.opensrp.api.domain.Location;
 import org.opensrp.api.util.TreeNode;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +80,7 @@ import java.util.Map;
  *         Class containing some static utility methods.
  */
 public class Utils {
+    private static final String TAG = "Utils";
     private static final SimpleDateFormat UI_DF = new SimpleDateFormat("dd-MM-yyyy");
     private static final SimpleDateFormat UI_DTF = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
@@ -403,7 +414,7 @@ public class Utils {
                     JsonObject je = e.getAsJsonObject();
                     return new DateTime(je.get("iMillis").getAsLong());
                 } else if (e.isJsonPrimitive()) {
-                    return new DateTime(e.getAsLong());
+                    return new DateTime(e.getAsString());
                 } else return null;
             }
 
@@ -495,4 +506,130 @@ public class Utils {
         return "";
     }
 
+    public static String readAssetContents(Context context, String path) {
+        String fileContents = null;
+        try {
+            InputStream is = context.getAssets().open(path);
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            fileContents = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            Log.e(TAG, Log.getStackTraceString(ex));
+        }
+
+        return fileContents;
+    }
+
+    public static InputStream getAssetFileInputStream(Context context, String path) {
+        InputStream is = null;
+        try {
+            is = context.getAssets().open(path);
+
+        } catch (IOException ex) {
+            Log.e(TAG, Log.getStackTraceString(ex));
+        }
+
+        return is;
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static <T> void startAsyncTask(AsyncTask<T, ?, ?> asyncTask, T[] params) {
+        if (params == null) {
+            @SuppressWarnings("unchecked")
+            T[] arr = (T[]) new Void[0];
+            params = arr;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, params);
+        } else {
+            asyncTask.execute(params);
+        }
+    }
+
+    public static DateTime dobToDateTime(CommonPersonObjectClient childDetails) {
+        DateTime birthDateTime = null;
+        String dobString = Utils.getValue(childDetails.getColumnmaps(), "dob", false);
+        if (!TextUtils.isEmpty(dobString)) {
+            birthDateTime = new DateTime(dobString);
+        }
+        return birthDateTime;
+    }
+
+    /**
+     * This method is only intended to be used for processing Zambia-EIR-DataDictionaryReporting-HIA2.csv
+     *
+     * @param csvFileName
+     * @param columns     this map has the db column name as value and the csv column no as the key
+     * @return each map is db row with key as the column name and value as the value from the csv file
+     */
+    public static List<Map<String, String>> populateTableFromCSV(Context context, String csvFileName, Map<Integer, String> columns) {
+        List<Map<String, String>> result = new ArrayList<>();
+
+        try {
+            InputStream is = getAssetFileInputStream(context, csvFileName);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+            try {
+                String line;
+                String category = "";
+                while ((line = reader.readLine()) != null) {
+                    Map<String, String> csvValues = new HashMap<>();
+                    String[] rowData = line.split(",");
+                    if (!TextUtils.isDigitsOnly(rowData[0])) {
+                        category = cleanUpHeader(line);
+                        continue;
+                    }
+                    for (Integer key : columns.keySet()) {
+                        if (key != 999) {
+                            String value = rowData[key];
+                            csvValues.put(columns.get(key), value);
+                            csvValues.put(columns.get(999), category);
+                        }
+                    }
+                    result.add(csvValues);
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "populateTableFromCSV: error reading csv file " + e.getMessage());
+
+            } finally {
+                try {
+                    is.close();
+                    reader.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "populateTableFromCSV: unable to close inputstream/bufferedreader " + e.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "populateTableFromCSV " + e.getMessage());
+        }
+        return result;
+    }
+
+    private static String cleanUpHeader(String header) {
+
+        try {
+            header = header.contains("\"") ? header.replaceAll("\"", "") : header;
+            int length = header.length() - 1;
+            for (int i = length; i > 0; i--) {
+                if (header.charAt(i) != ',') {
+                    header = header.substring(0, i + 1);
+                    break;
+                }
+            }
+            return header;
+        } catch (Exception ex) {
+            return header;
+        }
+    }
+
+    public static String kgStringSuffix(Float weight) {
+        return String.format("%s kg", weight);
+    }
+
+    public static String kgStringSuffix(String weight) {
+        return String.format("%s kg", weight);
+    }
 }

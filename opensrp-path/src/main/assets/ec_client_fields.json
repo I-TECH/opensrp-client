@@ -63,6 +63,13 @@
           }
         },
         {
+          "column_name":"nrc_number",
+          "type":"Client",
+          "json_mapping":{
+            "field":"attributes.NRC_Number"
+          }
+        },
+        {
           "column_name":"provider_uc",
           "type":"Client",
           "json_mapping":{
@@ -180,6 +187,20 @@
           }
         },
         {
+          "column_name":"inactive",
+          "type":"Client",
+          "json_mapping":{
+            "field":"attributes.inactive"
+          }
+        },
+        {
+          "column_name":"lost_to_follow_up",
+          "type":"Client",
+          "json_mapping":{
+            "field":"attributes.lost_to_follow_up"
+          }
+        },
+        {
           "column_name": "relational_id",
           "type": "Client",
           "json_mapping": {
@@ -258,7 +279,7 @@
           "type":"Event",
           "json_mapping":{
             "field":"obs.fieldCode",
-            "formSubmissionField":"PMTCT_Status"
+            "concept":"1396AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
           }
         },
         {

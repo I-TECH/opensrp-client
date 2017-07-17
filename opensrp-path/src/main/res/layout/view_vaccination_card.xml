@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="50dp"
-    android:background="@null">
+    android:background="@null"
+    android:paddingLeft="15dp">
 
     <ImageView
         android:id="@+id/status_iv"
@@ -10,7 +11,7 @@
         android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="20dp"
+        android:layout_marginLeft="0dp"
         android:layout_marginRight="5dp"
         android:background="@null"
         android:src="@drawable/ic_action_check" />
@@ -21,14 +22,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="10dp"
+        android:layout_marginLeft="0dp"
+        android:paddingLeft="0dp"
         android:layout_toRightOf="@id/status_iv"
         android:background="@null"
-        android:gravity="center_horizontal"
-        android:paddingRight="10dp"
+        android:gravity="center_vertical|left"
+        android:layout_marginRight="10dp"
         android:text="abc"
+        android:singleLine="false"
         android:textColor="@color/client_list_grey"
-        android:textSize="16sp" />
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/undo_b"
@@ -41,6 +44,6 @@
         android:textAllCaps="false"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:textColor="@android:color/white"
-        android:textSize="16sp" />
+        android:textSize="14sp" />
 
 </RelativeLayout>

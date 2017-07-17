@@ -8,32 +8,54 @@
     android:focusableInTouchMode="true"
     tools:showIn="@layout/smart_register_nav_bar_customized">
 
-    <LinearLayout
-        android:id="@+id/btn_back_to_home"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:id="@+id/back_btn_layout"
+        android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_centerVertical="true">
 
-        <TextView
-            android:id="@+id/name_inits"
-            android:layout_width="47dp"
-            android:layout_height="47dp"
-            android:layout_margin="1dp"
-            android:layout_toRightOf="@id/btn_back_to_home"
-            android:background="@drawable/name_inits_bg"
-            android:gravity="center"
-            android:text="RW"
-            android:textAllCaps="true"
-            android:textColor="@color/actionbar"
-            android:textSize="25sp" />
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/btn_back_to_home"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true">
+
+            <TextView
+                android:id="@+id/name_inits"
+                android:layout_width="47dp"
+                android:layout_height="47dp"
+                android:layout_margin="1dp"
+                android:background="@drawable/name_inits_bg"
+                android:gravity="center"
+                android:text="RW"
+                android:textAllCaps="true"
+                android:textColor="@color/actionbar"
+                android:textSize="25sp" />
+
+            <ImageView
+                android:id="@+id/back_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:src="@drawable/abc_ic_ab_back_mtrl_am_alpha"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/sync_progress_bar"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:indeterminate="true" />
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/title_layout"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:layout_toRightOf="@id/btn_back_to_home"
-        android:background="@drawable/transparent_gray_background"
+        android:layout_toRightOf="@id/back_btn_layout"
+        android:background="@android:color/transparent"
         android:orientation="horizontal"
         android:paddingLeft="2.5dp"
         android:visibility="visible">
@@ -44,8 +66,10 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:background="@android:color/transparent"
-            android:text="ZEIR"
-            android:textAllCaps="true" />
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:maxWidth="@dimen/title_label_text_max_width"
+            android:text="ZEIR"/>
 
         <org.ei.opensrp.view.customControls.CustomFontTextView
             android:id="@+id/btn_report_month"
@@ -146,9 +170,10 @@
         android:layout_height="fill_parent"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@id/register_client"
-        android:minWidth="@dimen/loc_picker_text_min_width"
         android:background="@drawable/transparent_gray_background"
         android:gravity="center"
+        android:minWidth="@dimen/loc_picker_text_min_width"
+        android:maxWidth="@dimen/loc_picker_text_max_width"
         android:paddingLeft="5dp"
         android:paddingRight="5dp"
         android:textSize="21sp" />
