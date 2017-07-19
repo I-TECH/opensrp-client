@@ -313,7 +313,7 @@ public abstract class BaseRegisterActivity extends SecuredNativeSmartRegisterAct
         addchild.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startFormActivity("child_enrollment", null, null);
+                startFormActivity("kip_child_enrollment", null, null);
                 drawer.closeDrawer(GravityCompat.START);
 
             }

@@ -261,7 +261,7 @@ public abstract class BaseActivity extends AppCompatActivity
         addchild.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startJsonForm("child_enrollment", null);
+                startJsonForm("kip_child_enrollment", null);
                 drawer.closeDrawer(GravityCompat.START);
 
             }
