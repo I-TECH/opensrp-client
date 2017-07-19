@@ -16,11 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.github.ybq.android.spinkit.style.ChasingDots;
 import com.github.ybq.android.spinkit.style.Circle;
-import com.github.ybq.android.spinkit.style.DoubleBounce;
-import com.github.ybq.android.spinkit.style.RotatingCircle;
-import com.github.ybq.android.spinkit.style.WanderingCubes;
 
 import org.ei.opensrp.Context;
 import org.ei.opensrp.commonregistry.CommonPersonObjectClient;
@@ -296,8 +292,8 @@ public class ChildSmartRegisterFragment extends BaseSmartRegisterFragment implem
         setTablename(tableName);
         SmartRegisterQueryBuilder countqueryBUilder = new SmartRegisterQueryBuilder();
         countqueryBUilder.SelectInitiateMainTableCounts(tableName);
-        countSelect = countqueryBUilder.mainCondition("");
-        mainCondition = "";
+        mainCondition = " dod is NULL OR dod = '' ";
+        countSelect = countqueryBUilder.mainCondition(mainCondition);
         super.CountExecute();
         countOverDue();
         countDueOverDue();
@@ -335,7 +331,7 @@ public class ChildSmartRegisterFragment extends BaseSmartRegisterFragment implem
         });
         queryBUilder.customJoin("LEFT JOIN " + parentTableName + " " + motherAlias + " ON  " + tableName + ".relational_id =  " + motherAlias + ".id");
         queryBUilder.customJoin("LEFT JOIN " + parentTableName + " " + guardianAlias + " ON  " + tableName + ".g_relational_id =  " + guardianAlias + ".id");
-        mainSelect = queryBUilder.mainCondition("");
+        mainSelect = queryBUilder.mainCondition(mainCondition);
         Sortqueries = ((CursorSortOption) getDefaultOptionsProvider().sortOption()).sort();
 
         currentlimit = 20;
