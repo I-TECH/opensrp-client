@@ -159,8 +159,8 @@
     <string name="last_name_hint">Last name</string>
     <string name="mother_guardian_name">Mother/Guardian Name</string>
     <string name="mother_guardian_name_hint">Mother or guardian name</string>
-    <string name="mother_guardian_nrc">Mother/Guardian NRC</string>
-    <string name="mother_guardian_nrc_hint">Mother or guardian NRC number</string>
+    <string name="mother_guardian_nrc">Mother/Guardian ID</string>
+    <string name="mother_guardian_nrc_hint">Mother or guardian ID number</string>
     <string name="mother_guardian_phone_number">Mother/Guardian Phone Number</string>
     <string name="mother_guardian_phone_number_hint">Mother or guardian phone number</string>
     <string name="date_birth_range">Date of birth range</string>

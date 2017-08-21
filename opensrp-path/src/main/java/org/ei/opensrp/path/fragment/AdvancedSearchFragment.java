@@ -535,7 +535,7 @@ public class AdvancedSearchFragment extends BaseSmartRegisterFragment {
         if (StringUtils.isNotBlank(motherGuardianNrcString))
 
         {
-            searchCriteriaString += " Mother/Guardian nrc: \"" + bold(motherGuardianNrcString) + "\",";
+            searchCriteriaString += " Mother/Guardian id: \"" + bold(motherGuardianNrcString) + "\",";
             String key = MOTHER_GUARDIAN_NRC_NUMBER;
             if (!outOfArea) {
                 key = parentTableName + "." + NRC_NUMBER;
