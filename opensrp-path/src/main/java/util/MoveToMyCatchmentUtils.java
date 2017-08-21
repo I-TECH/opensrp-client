@@ -5,19 +5,20 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import org.apache.commons.lang3.StringUtils;
-import org.ei.opensrp.Context;
-import org.ei.opensrp.DristhiConfiguration;
-import org.ei.opensrp.domain.Response;
-import org.ei.opensrp.domain.ResponseStatus;
-import org.ei.opensrp.event.Listener;
-import org.ei.opensrp.path.db.Event;
-import org.ei.opensrp.path.db.Obs;
-import org.ei.opensrp.path.repository.BaseRepository;
-import org.ei.opensrp.path.sync.ECSyncUpdater;
-import org.ei.opensrp.path.sync.PathClientProcessor;
-import org.ei.opensrp.repository.AllSharedPreferences;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.smartregister.Context;
+import org.smartregister.DristhiConfiguration;
+import org.smartregister.domain.Response;
+import org.smartregister.domain.ResponseStatus;
+import org.smartregister.domain.db.Event;
+import org.smartregister.domain.db.Obs;
+import org.smartregister.event.Listener;
+import org.smartregister.path.application.VaccinatorApplication;
+import org.smartregister.path.sync.ECSyncUpdater;
+import org.smartregister.path.sync.PathClientProcessor;
+import org.smartregister.repository.AllSharedPreferences;
+import org.smartregister.repository.BaseRepository;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -29,11 +30,11 @@ import java.util.List;
  * Created by keyman on 26/01/2017.
  */
 public class MoveToMyCatchmentUtils {
-    public static String MOVE_TO_CATCHMENT_EVENT = "Move To Catchment";
+    public static final String MOVE_TO_CATCHMENT_EVENT = "Move To Catchment";
 
     public static void moveToMyCatchment(final List<String> ids, final Listener<JSONObject> listener, final ProgressDialog progressDialog) {
 
-        Utils.startAsyncTask(new AsyncTask<Void, Void, JSONObject>() {
+        org.smartregister.util.Utils.startAsyncTask(new AsyncTask<Void, Void, JSONObject>() {
             @Override
             protected JSONObject doInBackground(Void... params) {
                 publishProgress();
@@ -42,8 +43,7 @@ public class MoveToMyCatchmentUtils {
                     return null;
                 } else {
                     try {
-                        JSONObject jsonObject = new JSONObject(response.payload());
-                        return jsonObject;
+                        return new JSONObject(response.payload());
                     } catch (Exception e) {
                         Log.e(getClass().getName(), "", e);
                         return null;
@@ -64,12 +64,12 @@ public class MoveToMyCatchmentUtils {
         }, null);
     }
 
-    public static Response<String> move(List<String> ids) {
+    private static Response<String> move(List<String> ids) {
         if (ids == null || ids.isEmpty()) {
-            return new Response<String>(ResponseStatus.failure, "entityId doesn't exist");
+            return new Response<>(ResponseStatus.failure, "entityId doesn't exist");
         }
 
-        Context context = Context.getInstance();
+        Context context = VaccinatorApplication.getInstance().context();
         DristhiConfiguration configuration = context.configuration();
 
         String baseUrl = configuration.dristhiBaseURL();
@@ -78,8 +78,7 @@ public class MoveToMyCatchmentUtils {
         String paramString = "?baseEntityId=" + urlEncode(idString.trim()) + "&limit=1000";
         String uri = baseUrl + ECSyncUpdater.SEARCH_URL + paramString;
 
-        Response<String> response = context.getHttpAgent().fetch(uri);
-        return response;
+        return context.getHttpAgent().fetch(uri);
     }
 
     private static String urlEncode(String value) {
@@ -135,7 +134,7 @@ public class MoveToMyCatchmentUtils {
 
                 if (event.getEventType().equals(BIRTH_REGISTRATION_EVENT) || event.getEventType().equals(NEW_WOMAN_REGISTRATION_EVENT)) {
                     //Create move to catchment event;
-                    org.ei.opensrp.clientandeventmodel.Event moveToCatchmentEvent = JsonFormUtils.createMoveToCatchmentEvent(context, event, fromLocationId, toProviderId, toLocationId);
+                    org.smartregister.clientandeventmodel.Event moveToCatchmentEvent = JsonFormUtils.createMoveToCatchmentEvent(context, event, fromLocationId, toProviderId, toLocationId);
                     JSONObject moveToCatchmentJsonEvent = ecUpdater.convertToJson(moveToCatchmentEvent);
                     if (moveToCatchmentEvent != null) {
                         ecUpdater.addEvent(moveToCatchmentEvent.getBaseEntityId(), moveToCatchmentJsonEvent);

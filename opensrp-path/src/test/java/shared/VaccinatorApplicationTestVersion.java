@@ -1,14 +1,14 @@
 package shared;
 
-import org.ei.opensrp.domain.ServiceRecord;
-import org.ei.opensrp.domain.Vaccine;
-import org.ei.opensrp.path.application.VaccinatorApplication;
-import org.ei.opensrp.path.repository.RecurringServiceRecordRepository;
-import org.ei.opensrp.path.repository.RecurringServiceTypeRepository;
-import org.ei.opensrp.path.repository.VaccineRepository;
-import org.ei.opensrp.path.repository.WeightRepository;
 import org.mockito.Mock;
 import org.robolectric.TestLifecycleApplication;
+import org.smartregister.growthmonitoring.repository.WeightRepository;
+import org.smartregister.immunization.domain.ServiceRecord;
+import org.smartregister.immunization.domain.Vaccine;
+import org.smartregister.immunization.repository.RecurringServiceRecordRepository;
+import org.smartregister.immunization.repository.RecurringServiceTypeRepository;
+import org.smartregister.immunization.repository.VaccineRepository;
+import org.smartregister.path.application.VaccinatorApplication;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -22,11 +22,11 @@ import static org.powermock.api.mockito.PowerMockito.when;
  */
 public class VaccinatorApplicationTestVersion extends VaccinatorApplication implements TestLifecycleApplication {
     @Mock
-    VaccineRepository vaccineRepository;
+    private VaccineRepository vaccineRepository;
     @Mock
-    RecurringServiceRecordRepository recurringServiceRecordRepository;
+    private RecurringServiceRecordRepository recurringServiceRecordRepository;
     @Mock
-    RecurringServiceTypeRepository recurringServiceTypeRepository;
+    private RecurringServiceTypeRepository recurringServiceTypeRepository;
 
     @Override
     public void onCreate() {

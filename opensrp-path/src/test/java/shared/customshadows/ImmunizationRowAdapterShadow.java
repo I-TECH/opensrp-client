@@ -1,17 +1,16 @@
 package shared.customshadows;
 
-import android.app.Activity;
 import android.app.Application;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.ei.opensrp.path.adapter.ImmunizationRowAdapter;
-import org.ei.opensrp.path.domain.VaccineWrapper;
 import org.robolectric.ShadowsAdapter;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.manifest.AndroidManifest;
 import org.robolectric.util.Scheduler;
+import org.smartregister.immunization.adapter.ImmunizationRowAdapter;
+import org.smartregister.immunization.domain.VaccineWrapper;
 
 import java.util.ArrayList;
 
@@ -27,22 +26,12 @@ public class ImmunizationRowAdapterShadow implements ShadowsAdapter {
     }
 
     @Override
-    public ShadowActivityAdapter getShadowActivityAdapter(Activity component) {
-        return null;
-    }
-
-    @Override
     public ShadowLooperAdapter getMainLooper() {
         return null;
     }
 
     @Override
     public String getShadowActivityThreadClassName() {
-        return null;
-    }
-
-    @Override
-    public ShadowApplicationAdapter getApplicationAdapter(Activity component) {
         return null;
     }
 
@@ -68,9 +57,7 @@ public class ImmunizationRowAdapterShadow implements ShadowsAdapter {
 
     @Implementation
     public ArrayList<VaccineWrapper> getDueVaccines() {
-        ArrayList<VaccineWrapper> dueVaccines = new ArrayList<>();
-
-        return dueVaccines;
+        return new ArrayList<>();
     }
 
     @Implementation

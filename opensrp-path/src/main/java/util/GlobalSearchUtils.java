@@ -5,12 +5,13 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import org.apache.commons.lang3.StringUtils;
-import org.ei.opensrp.Context;
-import org.ei.opensrp.DristhiConfiguration;
-import org.ei.opensrp.domain.Response;
-import org.ei.opensrp.event.Listener;
-import org.ei.opensrp.path.fragment.AdvancedSearchFragment;
 import org.json.JSONArray;
+import org.smartregister.Context;
+import org.smartregister.DristhiConfiguration;
+import org.smartregister.domain.Response;
+import org.smartregister.event.Listener;
+import org.smartregister.path.application.VaccinatorApplication;
+import org.smartregister.path.fragment.AdvancedSearchFragment;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -23,7 +24,7 @@ public class GlobalSearchUtils {
 
     public static void backgroundSearch(final Map<String, String> map, final Listener<JSONArray> listener, final ProgressDialog progressDialog) {
 
-        Utils.startAsyncTask(new AsyncTask<Void, Void, JSONArray>() {
+        org.smartregister.util.Utils.startAsyncTask(new AsyncTask<Void, Void, JSONArray>() {
             @Override
             protected JSONArray doInBackground(Void... params) {
                 publishProgress();
@@ -32,8 +33,7 @@ public class GlobalSearchUtils {
                     return null;
                 } else {
                     try {
-                        JSONArray jsonArray = new JSONArray(response.payload());
-                        return jsonArray;
+                        return new JSONArray(response.payload());
                     } catch (Exception e) {
                         Log.e(getClass().getName(), "", e);
                         return null;
@@ -54,8 +54,8 @@ public class GlobalSearchUtils {
         }, null);
     }
 
-    public static Response<String> globalSearch(Map<String, String> map) {
-        Context context = Context.getInstance();
+    private static Response<String> globalSearch(Map<String, String> map) {
+        Context context = VaccinatorApplication.getInstance().context();
         DristhiConfiguration configuration = context.configuration();
         String baseUrl = configuration.dristhiBaseURL();
         String paramString = "";
@@ -85,8 +85,7 @@ public class GlobalSearchUtils {
         }
         String uri = baseUrl + "/rest/search/path" + paramString;
 
-        Response<String> response = context.getHttpAgent().fetch(uri);
-        return response;
+        return context.getHttpAgent().fetch(uri);
     }
 
     private static String urlEncode(String value) {

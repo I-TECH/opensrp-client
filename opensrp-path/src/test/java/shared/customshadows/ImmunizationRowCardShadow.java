@@ -3,12 +3,12 @@ package shared.customshadows;
 import android.content.Context;
 import android.widget.Button;
 
-import org.ei.opensrp.domain.Alert;
-import org.ei.opensrp.path.domain.VaccineWrapper;
-import org.ei.opensrp.path.view.ImmunizationRowCard;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowLinearLayout;
+import org.smartregister.domain.Alert;
+import org.smartregister.immunization.domain.VaccineWrapper;
+import org.smartregister.immunization.view.ImmunizationRowCard;
 
 import java.util.Date;
 
@@ -22,7 +22,7 @@ import shared.VaccinatorApplicationTestVersion;
 public class ImmunizationRowCardShadow extends ShadowLinearLayout {
 
 
-    public static enum State {
+    public enum State {
         DONE_CAN_BE_UNDONE,
         DONE_CAN_NOT_BE_UNDONE,
         DUE,
@@ -92,12 +92,14 @@ public class ImmunizationRowCardShadow extends ShadowLinearLayout {
         return null;
     }
 
-    public static interface OnVaccineStateChangeListener {
-        void onStateChanged(final State newState);
-    }
 
     @Implementation
     public Button getUndoB() {
         return new Button(VaccinatorApplicationTestVersion.getInstance().getApplicationContext());
     }
+
+    public interface OnVaccineStateChangeListener {
+        void onStateChanged(State newState);
+    }
+
 }

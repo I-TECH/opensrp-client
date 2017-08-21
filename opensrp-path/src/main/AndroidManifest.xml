@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.ei.opensrp.path">
+    package="org.smartregister.path">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -20,6 +20,7 @@
             android:name=".activity.LoginActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
+            android:theme="@style/PathAppTheme"
             android:windowSoftInputMode="stateAlwaysHidden|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,18 +29,9 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activity.VaccinatorHomeActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:screenOrientation="portrait"
-            android:theme="@style/PathAppTheme" />
-        <activity
             android:name=".activity.ChildSmartRegisterActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppThemeNoActionBarAndTitle" />
-        <activity
-            android:name=".activity.ChildDetailActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeNoActionBarAndTitle" />
         <activity
@@ -47,33 +39,6 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeNoActionBarAndTitleWithEditButton" />
         <activity
-            android:name=".activity.FieldMonitorSmartRegisterActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppThemeNoActionBarAndTitle" />
-        <activity
-            android:name=".activity.FieldMonitorDailyDetailActivity"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppThemeNoActionBarAndTitle" />
-        <activity
-            android:name=".activity.FieldMonitorMonthlyDetailActivity"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppThemeNoActionBarAndTitle" />
-        <activity
-            android:name=".activity.WomanSmartRegisterActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppThemeNoActionBarAndTitle" />
-        <activity
-            android:name=".activity.WomanDetailActivity"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppThemeNoActionBarAndTitle" />
-        <activity
-            android:name=".activity.VaccineReportActivity"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-
             android:name="com.vijay.jsonwizard.activities.JsonFormActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"
@@ -89,7 +54,7 @@
         <receiver android:name=".receiver.VaccinatorAlarmReceiver" />
         <receiver android:name=".receiver.OnBootReceiver">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
@@ -105,10 +70,12 @@
             android:name=".activity.HIA2ReportsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeNoTitle.NoActionBar" />
-        <activity android:name=".activity.ReportSummaryActivity"
+        <activity
+            android:name=".activity.ReportSummaryActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeNoTitle.NoActionBar" />
-        <activity android:name=".activity.StockActivity"
+        <activity
+            android:name=".activity.StockActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeNoTitle.NoActionBar" />
 
@@ -116,13 +83,11 @@
             android:name="io.fabric.ApiKey"
             android:value="3f94f9c3caeff331b3a2bd8c2182b663ad6a955a" />
 
-        <service android:name=".service.intent.PathReplicationIntentService" />
         <service android:name=".service.intent.PullUniqueIdsIntentService" />
-        <service android:name=".service.intent.WeightIntentService" />
-        <service android:name=".service.intent.VaccineIntentService" />
-        <service android:name=".service.intent.ZScoreRefreshIntentService" />
-        <service android:name=".service.intent.RecurringIntentService" />
-        <service android:name=".service.intent.LocationsIntentService" />
+        <service android:name="org.smartregister.growthmonitoring.service.intent.WeightIntentService" />
+        <service android:name="org.smartregister.immunization.service.intent.VaccineIntentService" />
+        <service android:name="org.smartregister.growthmonitoring.service.intent.ZScoreRefreshIntentService" />
+        <service android:name="org.smartregister.immunization.service.intent.RecurringIntentService" />
         <service android:name=".service.intent.HIA2IntentService" />
 
         <provider

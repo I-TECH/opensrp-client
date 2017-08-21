@@ -3,11 +3,12 @@ package util;
 import android.content.Context;
 import android.util.Log;
 
-import org.ei.opensrp.path.domain.Report;
-import org.ei.opensrp.path.domain.ReportHia2Indicator;
-import org.ei.opensrp.path.sync.ECSyncUpdater;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
+import org.smartregister.path.application.VaccinatorApplication;
+import org.smartregister.path.domain.Report;
+import org.smartregister.path.domain.ReportHia2Indicator;
+import org.smartregister.path.sync.ECSyncUpdater;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -24,8 +25,8 @@ public class ReportUtils {
         try {
             ECSyncUpdater ecUpdater = ECSyncUpdater.getInstance(context);
 
-            String providerId = org.ei.opensrp.Context.getInstance().allSharedPreferences().fetchRegisteredANM();
-            String locationId = org.ei.opensrp.Context.getInstance().allSharedPreferences().getPreference(PathConstants.CURRENT_LOCATION_ID);
+            String providerId = VaccinatorApplication.getInstance().context().allSharedPreferences().fetchRegisteredANM();
+            String locationId = VaccinatorApplication.getInstance().context().allSharedPreferences().getPreference(PathConstants.CURRENT_LOCATION_ID);
             Report report = new Report();
             report.setFormSubmissionId(JsonFormUtils.generateRandomUUIDString());
             report.setHia2Indicators(hia2Indicators);
@@ -41,7 +42,6 @@ public class ReportUtils {
             report.setReportType(reportType);
             JSONObject reportJson = new JSONObject(JsonFormUtils.gson.toJson(report));
             ecUpdater.addReport(reportJson);
-
 
         } catch (Exception e) {
             Log.e(TAG, e.toString(), e);

@@ -7,13 +7,13 @@ import android.view.View;
 import android.widget.ProgressBar;
 
 import org.apache.commons.lang3.StringUtils;
-import org.ei.opensrp.Context;
-import org.ei.opensrp.clientandeventmodel.DateUtil;
-import org.ei.opensrp.commonregistry.CommonPersonObject;
-import org.ei.opensrp.commonregistry.CommonRepository;
-import org.ei.opensrp.cursoradapter.SmartRegisterQueryBuilder;
-import org.ei.opensrp.event.Listener;
-import org.ei.opensrp.path.domain.EntityLookUp;
+import org.smartregister.Context;
+import org.smartregister.clientandeventmodel.DateUtil;
+import org.smartregister.commonregistry.CommonPersonObject;
+import org.smartregister.commonregistry.CommonRepository;
+import org.smartregister.cursoradapter.SmartRegisterQueryBuilder;
+import org.smartregister.event.Listener;
+import org.smartregister.path.domain.EntityLookUp;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -22,8 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static android.view.View.VISIBLE;
-import static android.view.View.combineMeasuredStates;
-import static util.Utils.getValue;
+import static org.smartregister.util.Utils.getValue;
 
 /**
  * Created by keyman on 26/01/2017.
@@ -39,7 +38,7 @@ public class MotherLookUpUtils {
 
     public static void motherLookUp(final Context context, final EntityLookUp entityLookUp, final Listener<HashMap<CommonPersonObject, List<CommonPersonObject>>> listener, final ProgressBar progressBar) {
 
-        Utils.startAsyncTask(new AsyncTask<Void, Void, HashMap<CommonPersonObject, List<CommonPersonObject>>>() {
+        org.smartregister.util.Utils.startAsyncTask(new AsyncTask<Void, Void, HashMap<CommonPersonObject, List<CommonPersonObject>>>() {
             @Override
             protected HashMap<CommonPersonObject, List<CommonPersonObject>> doInBackground(Void... params) {
                 publishProgress();
@@ -79,7 +78,7 @@ public class MotherLookUpUtils {
 
 
         List<String> ids = new ArrayList<>();
-        List<CommonPersonObject> motherList = new ArrayList<CommonPersonObject>();
+        List<CommonPersonObject> motherList = new ArrayList<>();
 
         CommonRepository commonRepository = context.commonrepository(tableName);
         String query = lookUpQuery(entityLookUp.getMap(), tableName);
@@ -87,7 +86,7 @@ public class MotherLookUpUtils {
         Cursor cursor = null;
         try {
 
-            cursor = commonRepository.RawCustomQueryForAdapter(query);
+            cursor = commonRepository.rawCustomQueryForAdapter(query);
             if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
                 while (!cursor.isAfterLast()) {
                     CommonPersonObject commonPersonObject = commonRepository.readAllcommonforCursorAdapter(cursor);
@@ -140,20 +139,17 @@ public class MotherLookUpUtils {
     private static String lookUpQuery(Map<String, String> entityMap, String tableName) {
 
         SmartRegisterQueryBuilder queryBUilder = new SmartRegisterQueryBuilder();
-        queryBUilder.SelectInitiateMainTable(tableName, new String[]
-
-                        {
-                                "relationalid",
-                                "details",
-                                "zeir_id",
-                                "first_name",
-                                "last_name",
-                                "gender",
-                                "dob",
-                                "nrc_number",
-                                "contact_phone_number",
-                                "base_entity_id"
-                        }
+        queryBUilder.SelectInitiateMainTable(tableName, new String[]{
+                        "relationalid",
+                        "details",
+                        "zeir_id",
+                        "first_name",
+                        "last_name",
+                        "gender",
+                        "dob",
+                        "nrc_number",
+                        "contact_phone_number",
+                        "base_entity_id"}
 
         );
         String query = queryBUilder.mainCondition(getMainConditionString(entityMap));

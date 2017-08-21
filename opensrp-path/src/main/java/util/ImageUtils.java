@@ -1,13 +1,14 @@
 package util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.ei.opensrp.commonregistry.CommonPersonObjectClient;
-import org.ei.opensrp.domain.ProfileImage;
-import org.ei.opensrp.path.R;
-import org.ei.opensrp.path.domain.Photo;
 import org.opensrp.api.constants.Gender;
+import org.smartregister.commonregistry.CommonPersonObjectClient;
+import org.smartregister.domain.Photo;
+import org.smartregister.domain.ProfileImage;
+import org.smartregister.path.R;
+import org.smartregister.path.application.VaccinatorApplication;
 
-import static util.Utils.getValue;
+import static org.smartregister.util.Utils.getValue;
 
 /**
  * Created by keyman on 22/02/2017.
@@ -40,7 +41,7 @@ public class ImageUtils {
 
     public static Photo profilePhotoByClient(CommonPersonObjectClient client) {
         Photo photo = new Photo();
-        ProfileImage profileImage = org.ei.opensrp.Context.getInstance().imageRepository().findByEntityId(client.entityId());
+        ProfileImage profileImage = VaccinatorApplication.getInstance().context().imageRepository().findByEntityId(client.entityId());
         if (profileImage != null) {
             photo.setFilePath(profileImage.getFilepath());
         } else {

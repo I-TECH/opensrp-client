@@ -15,6 +15,21 @@
     },
     "services": [
       {
+        "id": "10",
+        "name": "Vit A IFC 2",
+        "dose": "50,000",
+        "schedule": {
+          "due": {
+            "reference": "dob",
+            "offset": "+0d"
+          },
+          "expiry": {
+            "reference": "dob",
+            "offset": "+6m"
+          }
+        }
+      },
+      {
         "id": "11",
         "name": "Vit A 1",
         "dose": "100,000",
@@ -24,6 +39,7 @@
             "multiple": {
               "condition": "OR",
               "prerequisites": [
+                "Vit A IFC 2",
                 "dob"
               ]
             },
