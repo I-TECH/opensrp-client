@@ -30,7 +30,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import org.joda.time.DateTime;
-import org.smartregister.Context;
+import org.smartregister.path.context.Context;
 import org.smartregister.domain.LoginResponse;
 import org.smartregister.domain.Response;
 import org.smartregister.domain.ResponseStatus;
@@ -40,6 +40,7 @@ import org.smartregister.growthmonitoring.service.intent.ZScoreRefreshIntentServ
 import org.smartregister.immunization.util.IMDatabaseUtils;
 import org.smartregister.path.R;
 import org.smartregister.path.application.VaccinatorApplication;
+import org.smartregister.path.service.intent.LocationsIntentService;
 import org.smartregister.path.service.intent.PullUniqueIdsIntentService;
 import org.smartregister.repository.AllSharedPreferences;
 import org.smartregister.sync.DrishtiSyncScheduler;
@@ -221,7 +222,10 @@ public class LoginActivity extends AppCompatActivity {
                         if (!PathConstants.TIME_CHECK || timeStatus.equals(TimeStatus.OK)) {
                             remoteLoginWith(userName, password, loginResponse.payload());
                             Intent intent = new Intent(appContext, PullUniqueIdsIntentService.class);
+                            Intent lIntent = new Intent(appContext, LocationsIntentService.class);
+                            lIntent.putExtra("userInfo", loginResponse.payload());
                             appContext.startService(intent);
+                            appContext.startService(lIntent);
                         } else {
                             if (timeStatus.equals(TimeStatus.TIMEZONE_MISMATCH)) {
                                 TimeZone serverTimeZone = getOpenSRPContext().userService()

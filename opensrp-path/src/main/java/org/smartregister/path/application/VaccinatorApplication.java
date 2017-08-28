@@ -12,7 +12,7 @@ import android.widget.Toast;
 import com.crashlytics.android.Crashlytics;
 
 import org.json.JSONArray;
-import org.smartregister.Context;
+import org.smartregister.path.context.Context;
 import org.smartregister.CoreLibrary;
 import org.smartregister.commonregistry.CommonFtsObject;
 import org.smartregister.growthmonitoring.GrowthMonitoringLibrary;
@@ -36,6 +36,7 @@ import org.smartregister.path.receiver.PathSyncBroadcastReceiver;
 import org.smartregister.path.receiver.SyncStatusBroadcastReceiver;
 import org.smartregister.path.repository.DailyTalliesRepository;
 import org.smartregister.path.repository.HIA2IndicatorsRepository;
+import org.smartregister.path.repository.LocationRepository;
 import org.smartregister.path.repository.MonthlyTalliesRepository;
 import org.smartregister.path.repository.PathRepository;
 import org.smartregister.path.repository.StockRepository;
@@ -76,6 +77,7 @@ public class VaccinatorApplication extends DrishtiApplication
     private EventClientRepository eventClientRepository;
     private StockRepository stockRepository;
     private boolean lastModified;
+    private LocationRepository locationRepository;
 
     @Override
     public void onCreate() {
@@ -250,6 +252,7 @@ public class VaccinatorApplication extends DrishtiApplication
                 hIA2IndicatorsRepository();
                 eventClientRepository();
                 stockRepository();
+                locationRepository();
             }
         } catch (UnsatisfiedLinkError e) {
             logError("Error on getRepository: " + e);
@@ -324,6 +327,13 @@ public class VaccinatorApplication extends DrishtiApplication
             stockRepository = new StockRepository((PathRepository) getRepository());
         }
         return stockRepository;
+    }
+
+    public LocationRepository locationRepository() {
+        if (locationRepository == null) {
+            locationRepository = new LocationRepository((PathRepository) getRepository());
+        }
+        return locationRepository;
     }
 
     public VaccineTypeRepository vaccineTypeRepository() {

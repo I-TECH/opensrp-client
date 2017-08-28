@@ -23,9 +23,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.smartregister.clientandeventmodel.Address;
-import org.smartregister.clientandeventmodel.Client;
+import org.smartregister.clientandeventmodel.DateUtil;
 import org.smartregister.clientandeventmodel.Event;
-import org.smartregister.clientandeventmodel.FormEntityConstants;
 import org.smartregister.clientandeventmodel.Obs;
 import org.smartregister.commonregistry.AllCommonsRepository;
 import org.smartregister.domain.ProfileImage;
@@ -37,6 +36,9 @@ import org.smartregister.immunization.util.VaccinatorUtils;
 import org.smartregister.path.R;
 import org.smartregister.path.activity.PathJsonFormActivity;
 import org.smartregister.path.application.VaccinatorApplication;
+import org.smartregister.path.domain.Client;
+import org.smartregister.path.domain.FormEntityConstants;
+import org.smartregister.path.repository.LocationRepository;
 import org.smartregister.path.repository.UniqueIdRepository;
 import org.smartregister.path.sync.ECSyncUpdater;
 import org.smartregister.path.sync.PathClientProcessor;
@@ -74,7 +76,7 @@ import id.zelory.compressor.Compressor;
 /**
  * Created by keyman on 08/02/2017.
  */
-public class JsonFormUtils {
+public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
     private static final String TAG = "JsonFormUtils";
 
     public static final String OPENMRS_ENTITY = "openmrs_entity";
@@ -114,20 +116,10 @@ public class JsonFormUtils {
     This @UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID is the UUID for relationship type "Parent/Child"
      */
     public static final String UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID = "8d91a210-c2cc-11de-8d13-0010c6dffd0f";
-public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
-    private static final String TAG = "JsonFormUtils";
 
-    public static final String MOTHER_DEFAULT_DOB = "01-01-1960";
-    private static final String ENCOUNTER = "encounter";
-    public static final String RELATIONAL_ID = "relational_id";
-    private static final String ENCOUNTER_TYPE = "encounter_type";
-    public static final String CURRENT_ZEIR_ID = "current_zeir_id";
-    public static final String READ_ONLY = "read_only";
-    private static final String METADATA = "metadata";
     public static final String ZEIR_ID = "ZEIR_ID";
     private static final String M_ZEIR_ID = "M_ZEIR_ID";
-    public static final String encounterType = "Update Birth Registration";
-    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
     private static final String LOCATION_HIERARCHY = "locationsHierarchy";
     private static final String MAP = "map";
@@ -139,7 +131,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
     public static final Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").registerTypeAdapter(DateTime.class, new DateTimeTypeConverter()).create();
 
 
-    public static void saveForm(Context context, org.smartregister.Context openSrpContext,
+    public static void saveForm(Context context, org.smartregister.path.context.Context openSrpContext,
                                 String jsonString, String providerId) {
         try {
             JSONObject form = new JSONObject(jsonString);
@@ -155,11 +147,11 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
 
     public static void saveAdverseEvent(String jsonString, String locationId, String baseEntityId,
                                         String providerId) {
-        Utils.startAsyncTask(
+        org.smartregister.util.Utils.startAsyncTask(
                 new SaveAdverseEventTask(jsonString, locationId, baseEntityId, providerId), null);
     }
 
-    private static void saveChildEnrollment(Context context, org.ei.opensrp.Context openSrpContext,
+    private static void saveChildEnrollment(Context context, org.smartregister.path.context.Context openSrpContext,
                                             String jsonString, String providerId, String imageKey, String bindType) {
         if (context == null || openSrpContext == null || StringUtils.isBlank(providerId)
                 || StringUtils.isBlank(jsonString)) {
@@ -294,7 +286,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         }
     }
 
-    public static void editsave(Context context, org.ei.opensrp.Context openSrpContext, String jsonString, String providerId, String imageKey, String bindType, String subBindType) {
+    public static void editsave(Context context, org.smartregister.path.context.Context openSrpContext, String jsonString, String providerId, String imageKey, String bindType, String subBindType) {
         if (context == null || StringUtils.isBlank(providerId) || StringUtils.isBlank(jsonString)) {
             return;
         }
@@ -793,102 +785,6 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return unformattedId;
     }
 
-
-    private static void fillAttributes(Map<String, Object> pattributes, JSONObject jsonObject) {
-
-        String value = getString(jsonObject, VALUE);
-        if (StringUtils.isBlank(value)) {
-            return;
-        }
-
-        if (StringUtils.isNotBlank(getString(jsonObject, ENTITY_ID))) {
-            return;
-        }
-
-        String entity = PERSON_ATTRIBUTE;
-        String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-
-        if (entityVal != null && entityVal.equals(entity)) {
-            String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
-            pattributes.put(entityIdVal, value);
-        }
-    }
-
-
-    private static void fillAddressFields(JSONObject jsonObject, Map<String, Address> addresses) {
-
-        if (jsonObject == null) {
-            return;
-        }
-
-        try {
-
-            String value = getString(jsonObject, VALUE);
-            if (StringUtils.isBlank(value)) {
-                return;
-            }
-
-            if (StringUtils.isNotBlank(getString(jsonObject, ENTITY_ID))) {
-                return;
-            }
-
-            String entity = PERSON_ADDRESS;
-            String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-
-            if (entityVal != null && entityVal.equalsIgnoreCase(entity)) {
-                String addressType = getString(jsonObject, OPENMRS_ENTITY_PARENT);
-                String addressField = getString(jsonObject, OPENMRS_ENTITY_ID);
-
-                Address ad = addresses.get(addressType);
-                if (ad == null) {
-                    ad = new Address(addressType, null, null, null, null, null, null, null, null);
-                }
-
-                if (addressField.equalsIgnoreCase("startDate") || addressField.equalsIgnoreCase("start_date")) {
-                    ad.setStartDate(DateUtil.parseDate(value));
-                } else if (addressField.equalsIgnoreCase("endDate") || addressField.equalsIgnoreCase("end_date")) {
-                    ad.setEndDate(DateUtil.parseDate(value));
-                } else if (addressField.equalsIgnoreCase("latitude")) {
-                    ad.setLatitude(value);
-                } else if (addressField.equalsIgnoreCase("longitute")) {
-                    ad.setLongitude(value);
-                } else if (addressField.equalsIgnoreCase("geopoint")) {
-                    // example geopoint 34.044494 -84.695704 4 76 = lat lon alt prec
-                    String geopoint = value;
-                    if (!StringUtils.isEmpty(geopoint)) {
-                        String[] g = geopoint.split(" ");
-                        ad.setLatitude(g[0]);
-                        ad.setLongitude(g[1]);
-                        ad.setGeopoint(geopoint);
-                    }
-                } else if (addressField.equalsIgnoreCase("postal_code") || addressField.equalsIgnoreCase("postalCode")) {
-                    ad.setPostalCode(value);
-                } else if (addressField.equalsIgnoreCase("sub_town") || addressField.equalsIgnoreCase("subTown")) {
-                    ad.setSubTown(value);
-                } else if (addressField.equalsIgnoreCase("town")) {
-                    ad.setTown(value);
-                } else if (addressField.equalsIgnoreCase("sub_district") || addressField.equalsIgnoreCase("subDistrict")) {
-                    ad.setSubDistrict(value);
-                } else if (addressField.equalsIgnoreCase("district") || addressField.equalsIgnoreCase("county")
-                        || addressField.equalsIgnoreCase("county_district") || addressField.equalsIgnoreCase("countyDistrict")) {
-                    ad.setCountyDistrict(value);
-                } else if (addressField.equalsIgnoreCase("city") || addressField.equalsIgnoreCase("village")
-                        || addressField.equalsIgnoreCase("cityVillage") || addressField.equalsIgnoreCase("city_village")) {
-                    ad.setCityVillage(value);
-                } else if (addressField.equalsIgnoreCase("state") || addressField.equalsIgnoreCase("state_province") || addressField.equalsIgnoreCase("stateProvince")) {
-                    ad.setStateProvince(value);
-                } else if (addressField.equalsIgnoreCase("country")) {
-                    ad.setCountry(value);
-                } else {
-                    ad.addAddressField(addressField, value);
-                }
-                addresses.put(addressType, ad);
-            }
-        } catch (ParseException e) {
-            Log.e(TAG, "", e);
-        }
-    }
-
     // Helper functions
 
     public static JSONArray fields(JSONObject jsonForm) {
@@ -974,23 +870,6 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return value(jsonArray, encounter.entity(), encounter.entityId());
     }
 
-    private static String value(JSONArray jsonArray, String entity, String entityId) {
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = getJSONObject(jsonArray, i);
-            if (StringUtils.isNotBlank(getString(jsonObject, ENTITY_ID))) {
-                continue;
-            }
-            String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-            String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
-            if (entityVal != null && entityVal.equals(entity) && entityIdVal != null && entityIdVal.equals(entityId)) {
-                return getString(jsonObject, VALUE);
-            }
-
-        }
-        return null;
-    }
-
     public static String getFieldValue(JSONArray jsonArray, String key) {
         if (jsonArray == null || jsonArray.length() == 0) {
             return null;
@@ -1004,19 +883,6 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
             }
         }
         return null;
-    }
-
-    private static JSONObject getJSONObject(JSONArray jsonArray, int index) {
-        if (jsonArray == null || jsonArray.length() == 0) {
-            return null;
-        }
-
-        try {
-            return jsonArray.getJSONObject(index);
-        } catch (JSONException e) {
-            return null;
-
-        }
     }
 
     public static JSONArray getJSONArray(JSONObject jsonObject, String field) {
@@ -1071,26 +937,6 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         }
     }
 
-    public static Date formatDate(String dateString, boolean startOfToday) {
-        try {
-
-            if (StringUtils.isBlank(dateString)) {
-                return null;
-            }
-
-            if (dateString.matches("\\d{2}-\\d{2}-\\d{4}")) {
-                return dd_MM_yyyy.parse(dateString);
-            } else if (dateString.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                return DateUtil.parseDate(dateString);
-            }
-
-        } catch (ParseException e) {
-            Log.e(TAG, "", e);
-        }
-
-        return null;
-    }
-
     public static String generateRandomUUIDString() {
         return UUID.randomUUID().toString();
     }
@@ -1107,7 +953,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         }
     }
 
-    public static Client createSubformClient(Context context, org.ei.opensrp.Context openSrpContext, JSONArray fields, Client parent, String bindType, String relationalId) throws ParseException {
+    public static Client createSubformClient(Context context, org.smartregister.path.context.Context openSrpContext, JSONArray fields, Client parent, String bindType, String relationalId) throws ParseException {
 
         if (StringUtils.isBlank(bindType)) {
             return null;
@@ -1129,14 +975,14 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         String lastName = getSubFormFieldValue(fields, FormEntityConstants.Person.last_name, bindType);
         // Get full name of father/guardian and set first and last names
         String fullName = getSubFormFieldValue(fields, FormEntityConstants.Person.full_name, bindType);
-        if(StringUtils.isNotBlank(fullName) && StringUtils.isBlank(firstName)
-                && StringUtils.isBlank(lastName) && StringUtils.isBlank(middleName)){
+        if (StringUtils.isNotBlank(fullName) && StringUtils.isBlank(firstName)
+                && StringUtils.isBlank(lastName) && StringUtils.isBlank(middleName)) {
             String[] tokens = fullName.split("\\s+");
             firstName = StringUtils.isBlank(tokens[0]) ? firstName : tokens[0];
             lastName = StringUtils.isBlank(tokens[1]) ? lastName : tokens[1];
         }
 
-        if(StringUtils.isBlank(fullName) && StringUtils.isBlank(firstName)
+        if (StringUtils.isBlank(fullName) && StringUtils.isBlank(firstName)
                 && StringUtils.isBlank(lastName) && StringUtils.isBlank(middleName))
             return null;
 
@@ -1172,9 +1018,9 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
                 .withFirstName(firstName)
                 .withMiddleName(middleName)
                 .withLastName(lastName)
-                .withBirthdate(new DateTime(birthdate), birthdateApprox)
-                .withDeathdate(new DateTime(deathdate), deathdateApprox)
-                .withGender(gender).withDateCreated(new DateTime());
+                .withBirthdate(birthdate, birthdateApprox)
+                .withDeathdate(deathdate, deathdateApprox)
+                .withGender(gender).withDateCreated(new Date());
 
         c.withAddresses(addresses)
                 .withAttributes(extractAttributes(fields, bindType))
@@ -1192,10 +1038,10 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return c;
     }
 
-    private static String getRelationshipTypeId(org.ei.opensrp.Context openSrpContext, JSONArray fields, String bindType) {
+    private static String getRelationshipTypeId(org.smartregister.path.context.Context openSrpContext, JSONArray fields, String bindType) {
         String relationshipType = getSubFormFieldValue(fields, FormEntityConstants.Relationship.relationship, bindType);
 
-        if(StringUtils.isBlank(relationshipType))
+        if (StringUtils.isBlank(relationshipType))
             return JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID;
 
         JSONArray relationshipTypes;
@@ -1204,7 +1050,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         try {
             relationshipTypes = new JSONObject(openSrpContext.allSettings().fetchRelationshipTypes()).getJSONArray("relationshipTypes");
 
-            if(relationshipTypes != null && relationshipTypes.length() > 0) {
+            if (relationshipTypes != null && relationshipTypes.length() > 0) {
                 for (int n = 0; n < relationshipTypes.length(); n++) {
                     rType = new JSONObject(relationshipTypes.getString(n));
                     if (rType.has("name") && rType.getString("name").equals(relationshipType)) {
@@ -1216,7 +1062,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
             e.printStackTrace();
         }
 
-        if(StringUtils.isBlank(relationshipTypeId)){
+        if (StringUtils.isBlank(relationshipTypeId)) {
             //return the universal for parent/child
             relationshipTypeId = JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID;
         }
@@ -1224,17 +1070,17 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return relationshipTypeId;
     }
 
-    public static String getRelationshipType(org.ei.opensrp.Context openSrpContext, String relationshipTypeId) {
+    public static String getRelationshipType(org.smartregister.path.context.Context openSrpContext, String relationshipTypeId) {
         JSONArray relationshipTypes;
         JSONObject rType;
         String relationshipType = "";
         try {
             relationshipTypes = new JSONObject(openSrpContext.allSettings().fetchRelationshipTypes()).getJSONArray("relationshipTypes");
 
-            if(relationshipTypes != null && relationshipTypes.length() > 0) {
+            if (relationshipTypes != null && relationshipTypes.length() > 0) {
                 for (int n = 0; n < relationshipTypes.length(); n++) {
                     rType = new JSONObject(relationshipTypes.getString(n));
-                    if (rType.has("key") && rType.getString("key").equals(relationshipTypeId)){
+                    if (rType.has("key") && rType.getString("key").equals(relationshipTypeId)) {
                         relationshipType = rType.has("name") ? rType.getString("name") : "";
                         break;
                     }
@@ -1259,21 +1105,6 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
             Log.e(TAG, e.getMessage());
         }
         return mergedJSON;
-    }
-
-    private static String[] getNames(JSONObject jo) {
-        int length = jo.length();
-        if (length == 0) {
-            return null;
-        }
-        Iterator i = jo.keys();
-        String[] names = new String[length];
-        int j = 0;
-        while (i.hasNext()) {
-            names[j] = (String) i.next();
-            j += 1;
-        }
-        return names;
     }
 
     public static Event createSubFormEvent(JSONArray fields, JSONObject metadata, Event parent, String entityId, String encounterType, String providerId, String bindType) {
@@ -1330,7 +1161,17 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
     }
 
 
-    private static Map<String, String> extractIdentifiers(JSONArray fields, String bindType) {
+    public static Map<String, String> extractIdentifiers(JSONArray fields) {
+        Map<String, String> pids = new HashMap<>();
+        for (int i = 0; i < fields.length(); i++) {
+            JSONObject jsonObject = getJSONObject(fields, i);
+            fillIdentifiers(pids, jsonObject);
+        }
+        return pids;
+    }
+
+
+    public static Map<String, String> extractIdentifiers(JSONArray fields, String bindType) {
         Map<String, String> pids = new HashMap<>();
         for (int i = 0; i < fields.length(); i++) {
             JSONObject jsonObject = getJSONObject(fields, i);
@@ -1340,33 +1181,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
     }
 
 
-    private static JSONArray generateLocationHierarchyTree(org.smartregister.Context context, boolean withOtherOption, ArrayList<String> allowedLevels) {
-        JSONArray array = new JSONArray();
-        try {
-            JSONObject locationData = new JSONObject(context.anmLocationController().get());
-            if (locationData.has(LOCATION_HIERARCHY)
-                    && locationData.getJSONObject(LOCATION_HIERARCHY).has(MAP)) {
-                JSONObject map = locationData.getJSONObject(LOCATION_HIERARCHY).getJSONObject(MAP);
-    private static Map<String, Object> extractAttributes(JSONArray fields, String bindType) {
-        Map<String, Object> pattributes = new HashMap<>();
-        for (int i = 0; i < fields.length(); i++) {
-            JSONObject jsonObject = getJSONObject(fields, i);
-            fillSubFormAttributes(pattributes, jsonObject, bindType);
-        }
-        return pattributes;
-    }
-
-    private static Map<String, Address> extractAddresses(JSONArray fields, String bindType) {
-        Map<String, Address> paddr = new HashMap<>();
-        for (int i = 0; i < fields.length(); i++) {
-            JSONObject jsonObject = getJSONObject(fields, i);
-            fillSubFormAddressFields(jsonObject, paddr, bindType);
-        }
-        return paddr;
-    }
-
-
-    private static void addRelationship(Client parent, Client child, String bindType, String relationshipType) {
+    private static void addRelationship(Client parent, Client child, String
+            bindType, String relationshipType) {
         child.addRelationship(bindType, parent.getBaseEntityId(), relationshipType);
     }
 
@@ -1395,7 +1211,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return null;
     }
 
-    private static String getSubFormFieldValue(JSONArray jsonArray, FormEntityConstants.Relationship relationship, String bindType) {
+    private static String getSubFormFieldValue(JSONArray
+                                                       jsonArray, FormEntityConstants.Relationship relationship, String bindType) {
         if (jsonArray == null || jsonArray.length() == 0) {
             return null;
         }
@@ -1420,130 +1237,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return null;
     }
 
-    private static void fillSubFormIdentifiers(Map<String, String> pids, JSONObject jsonObject, String bindType) {
-
-        String value = getString(jsonObject, VALUE);
-        if (StringUtils.isBlank(value)) {
-            return;
-        }
-
-        String bind = getString(jsonObject, ENTITY_ID);
-        if (bind == null || !bind.equals(bindType)) {
-            return;
-        }
-
-        String entity = PERSON_INDENTIFIER;
-        String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-
-        if (entityVal != null && entityVal.equals(entity)) {
-            String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
-
-            if (entityIdVal.equals(KIP_ID) && StringUtils.isNotBlank(value) && !value.contains("-")) {
-                StringBuilder stringBuilder = new StringBuilder(value);
-                stringBuilder.insert(value.length() - 1, '-');
-                value = stringBuilder.toString();
-            }
-
-            pids.put(entityIdVal, value);
-        }
-    }
-
-    private static void fillSubFormAttributes(Map<String, Object> pattributes, JSONObject jsonObject, String bindType) {
-
-        String value = getString(jsonObject, VALUE);
-        if (StringUtils.isBlank(value)) {
-            return;
-        }
-
-        String bind = getString(jsonObject, ENTITY_ID);
-        if (bind == null || !bind.equals(bindType)) {
-            return;
-        }
-
-        String entity = PERSON_ATTRIBUTE;
-        String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-
-        if (entityVal != null && entityVal.equals(entity)) {
-            String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
-            pattributes.put(entityIdVal, value);
-        }
-    }
-
-    private static void fillSubFormAddressFields(JSONObject jsonObject, Map<String, Address> addresses, String bindType) {
-
-        if (jsonObject == null) {
-            return;
-        }
-
-        try {
-            String value = getString(jsonObject, VALUE);
-            if (StringUtils.isBlank(value)) {
-                return;
-            }
-
-            String bind = getString(jsonObject, ENTITY_ID);
-            if (bind == null || !bind.equals(bindType)) {
-                return;
-            }
-
-            String entity = PERSON_ADDRESS;
-            String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-
-            if (entityVal != null && entityVal.equalsIgnoreCase(entity)) {
-                String addressType = getString(jsonObject, OPENMRS_ENTITY_PARENT);
-                String addressField = getString(jsonObject, OPENMRS_ENTITY_ID);
-
-                Address ad = addresses.get(addressType);
-                if (ad == null) {
-                    ad = new Address(addressType, null, null, null, null, null, null, null, null);
-                }
-
-                if (addressField.equalsIgnoreCase("startDate") || addressField.equalsIgnoreCase("start_date")) {
-                    ad.setStartDate(DateUtil.parseDate(value));
-                } else if (addressField.equalsIgnoreCase("endDate") || addressField.equalsIgnoreCase("end_date")) {
-                    ad.setEndDate(DateUtil.parseDate(value));
-                } else if (addressField.equalsIgnoreCase("latitude")) {
-                    ad.setLatitude(value);
-                } else if (addressField.equalsIgnoreCase("longitute")) {
-                    ad.setLongitude(value);
-                } else if (addressField.equalsIgnoreCase("geopoint")) {
-                    // example geopoint 34.044494 -84.695704 4 76 = lat lon alt prec
-                    String geopoint = value;
-                    if (!StringUtils.isEmpty(geopoint)) {
-                        String[] g = geopoint.split(" ");
-                        ad.setLatitude(g[0]);
-                        ad.setLongitude(g[1]);
-                        ad.setGeopoint(geopoint);
-                    }
-                } else if (addressField.equalsIgnoreCase("postal_code") || addressField.equalsIgnoreCase("postalCode")) {
-                    ad.setPostalCode(value);
-                } else if (addressField.equalsIgnoreCase("sub_town") || addressField.equalsIgnoreCase("subTown")) {
-                    ad.setSubTown(value);
-                } else if (addressField.equalsIgnoreCase("town")) {
-                    ad.setTown(value);
-                } else if (addressField.equalsIgnoreCase("sub_district") || addressField.equalsIgnoreCase("subDistrict")) {
-                    ad.setSubDistrict(value);
-                } else if (addressField.equalsIgnoreCase("district") || addressField.equalsIgnoreCase("county")
-                        || addressField.equalsIgnoreCase("county_district") || addressField.equalsIgnoreCase("countyDistrict")) {
-                    ad.setCountyDistrict(value);
-                } else if (addressField.equalsIgnoreCase("city") || addressField.equalsIgnoreCase("village")
-                        || addressField.equalsIgnoreCase("cityVillage") || addressField.equalsIgnoreCase("city_village")) {
-                    ad.setCityVillage(value);
-                } else if (addressField.equalsIgnoreCase("state") || addressField.equalsIgnoreCase("state_province") || addressField.equalsIgnoreCase("stateProvince")) {
-                    ad.setStateProvince(value);
-                } else if (addressField.equalsIgnoreCase("country")) {
-                    ad.setCountry(value);
-                } else {
-                    ad.addAddressField(addressField, value);
-                }
-                addresses.put(addressType, ad);
-            }
-        } catch (ParseException e) {
-            Log.e(TAG, "", e);
-        }
-    }
-
-    public static JSONArray generateLocationHierarchyTree(org.ei.opensrp.Context context, boolean withOtherOption, ArrayList<String> allowedLevels) {
+    public static JSONArray generateLocationHierarchyTree(org.smartregister.Context context,
+                                                          boolean withOtherOption, ArrayList<String> allowedLevels) {
         JSONArray array = new JSONArray();
         try {
             JSONObject locationData = new JSONObject(context.anmLocationController().get());
@@ -1576,7 +1271,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return array;
     }
 
-    public static JSONArray generateDefaultLocationHierarchy(org.smartregister.Context context, ArrayList<String> allowedLevels) {
+    public static JSONArray generateDefaultLocationHierarchy(org.smartregister.Context
+                                                                     context, ArrayList<String> allowedLevels) {
         try {
             String defaultLocationUuid = context.allSharedPreferences()
                     .fetchDefaultLocalityId(context.allSharedPreferences().fetchRegisteredANM());
@@ -1599,7 +1295,9 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return null;
     }
 
-    private static JSONArray getDefaultLocationHierarchy(String defaultLocationUuid, JSONObject openMrsLocationData, JSONArray parents, ArrayList<String> allowedLevels) throws JSONException {
+    private static JSONArray getDefaultLocationHierarchy(String
+                                                                 defaultLocationUuid, JSONObject openMrsLocationData, JSONArray
+                                                                 parents, ArrayList<String> allowedLevels) throws JSONException {
         if (allowedLevels.contains(openMrsLocationData.getJSONObject("node").getJSONArray("tags").getString(0))) {
             parents.put(openMrsLocationData.getJSONObject("node").getString("name"));
         }
@@ -1620,7 +1318,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return null;
     }
 
-    private static void getFormJsonData(JSONArray allLocationData, JSONObject openMrsLocationData, ArrayList<String> allowedLevels) throws JSONException {
+    private static void getFormJsonData(JSONArray allLocationData, JSONObject
+            openMrsLocationData, ArrayList<String> allowedLevels) throws JSONException {
         JSONObject jsonFormObject = new JSONObject();
         String name = openMrsLocationData.getJSONObject("node").getString("name");
         jsonFormObject.put("name", getOpenMrsReadableName(name));
@@ -1685,7 +1384,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
             JSONArray upToFacilities = generateLocationHierarchyTree(context, false, new ArrayList<>(allLevels.subList(0, 5)));
             JSONArray entireTree = generateLocationHierarchyTree(context, true, allLevels);
             JSONArray counties = generateLocationArray("County", context, true, new ArrayList<>(allLevels.subList(1, 2)));
-            JSONArray subCounties = generateLocationArray("Sub County",context, true, new ArrayList<>(allLevels.subList(2, 3)));
+            JSONArray subCounties = generateLocationArray("Sub County", context, true, new ArrayList<>(allLevels.subList(2, 3)));
             JSONArray wards = generateLocationArray("Ward", context, true, new ArrayList<>(allLevels.subList(3, 4)));
 
             for (int i = 0; i < questions.length(); i++) {
@@ -1713,24 +1412,25 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         }
     }
 
-    private static JSONArray generateLocationArray(String locationTag, org.ei.opensrp.Context context, boolean b, ArrayList<String> strings) throws JSONException {
+    private static JSONArray generateLocationArray(String locationTag, org.smartregister.Context context, boolean b, ArrayList<String> strings) throws
+            JSONException {
 
         JSONArray jsonArray = new JSONArray();
         LocationRepository locationRepository = VaccinatorApplication.getInstance().locationRepository();
 
         List<Location> locations = locationRepository.getLocationsByTag(locationTag);
 
-        if(locations != null && locations.size() > 0) {
+        if (locations != null && locations.size() > 0) {
             for (Location l : locations) {
-                if(l.getTags() != null && l.getTags().contains(locationTag))
+                if (l.getTags() != null && l.getTags().contains(locationTag))
                     jsonArray.put(l.getName());
             }
             jsonArray.put("Other");
         } else {
             JSONArray array = generateLocationHierarchyTree(context, b, strings);
-            for(int i = 0; i < array.length(); i++){
+            for (int i = 0; i < array.length(); i++) {
                 JSONObject jo = array.getJSONObject(i);
-                if(jo.has("name") && StringUtils.isNotBlank(jo.getString("name"))){
+                if (jo.has("name") && StringUtils.isNotBlank(jo.getString("name"))) {
                     jsonArray.put(jo.getString("name"));
                 }
             }
@@ -1876,7 +1576,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return response;
     }
 
-    private static String getOpenMrsLocationId(String locationName, JSONObject openMrsLocations)
+    private static String getOpenMrsLocationId(String locationName, JSONObject
+            openMrsLocations)
             throws JSONException {
         String name = openMrsLocations.getJSONObject("node").getString("name");
 
@@ -2000,7 +1701,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return response;
     }
 
-    private static String getOpenMrsLocationName(String locationId, JSONObject openMrsLocations)
+    private static String getOpenMrsLocationName(String locationId, JSONObject
+            openMrsLocations)
             throws JSONException {
         String id = openMrsLocations.getJSONObject("node").getString("locationId");
         Log.d(TAG, "Current location id is " + id);
@@ -2025,8 +1727,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return null;
     }
 
-
-    public static void saveReportDeceased(Context context, org.smartregister.Context openSrpContext,
+    public static void saveReportDeceased(Context context, org.smartregister.Context
+            openSrpContext,
                                           String jsonString, String providerId, String locationId, String entityId) {
 
         try {
@@ -2147,163 +1849,6 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         }
     }
 
-    private static String convertToOpenMRSDate(String value) {
-        if (value.matches("\\d{4}-\\d{2}-\\d{2}")) { // already in openmrs date format
-            return value;
-        }
-
-        try {
-            Date date = formatDate(value, false);
-            if (date != null) {
-                return DateUtil.yyyyMMdd.format(date);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "", e);
-        }
-        return null;
-    }
-
-    private static class SaveOutOfAreaServiceTask extends AsyncTask<Void, Void, Void> {
-
-        private final Context context;
-        private final org.ei.opensrp.Context openSrpContext;
-        private final String formString;
-
-        public SaveOutOfAreaServiceTask(Context context, org.ei.opensrp.Context openSrpContext, String formString) {
-            this.context = context;
-            this.openSrpContext = openSrpContext;
-            this.formString = formString;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                JSONObject form = new JSONObject(formString);
-
-                // Create a weight object if weight was recorded
-                Weight weight = getWeightObject(openSrpContext, form);
-                if (weight != null) {
-                    WeightRepository weightRepository = VaccinatorApplication.getInstance().weightRepository();
-                    weightRepository.add(weight);
-                }
-
-                // Create a vaccine object for all recorded vaccines
-                ArrayList<Vaccine> vaccines = getVaccineObjects(context, openSrpContext, form);
-                if (vaccines.size() > 0) {
-                    VaccineRepository vaccineRepository = VaccinatorApplication.getInstance().vaccineRepository();
-                    for (Vaccine curVaccine : vaccines) {
-                        vaccineRepository.add(curVaccine);
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, Log.getStackTraceString(e));
-            }
-            return null;
-        }
-    }
-
-    private static class SaveAdverseEventTask extends AsyncTask<Void, Void, Void> {
-        private final String jsonString;
-        private final String locationId;
-        private final String baseEntityId;
-        private final String providerId;
-
-        public SaveAdverseEventTask(String jsonString, String locationId, String baseEntityId,
-                                    String providerId) {
-            this.jsonString = jsonString;
-            this.locationId = locationId;
-            this.baseEntityId = baseEntityId;
-            this.providerId = providerId;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                PathRepository db = (PathRepository) VaccinatorApplication.getInstance().getRepository();
-
-                JSONObject jsonForm = new JSONObject(jsonString);
-
-                JSONArray fields = fields(jsonForm);
-                if (fields == null) {
-                    return null;
-                }
-
-                String bindType = "child";
-                String encounterDateField = getFieldValue(fields, "Date_Reaction");
-
-                String encounterType = getString(jsonForm, ENCOUNTER_TYPE);
-                JSONObject metadata = getJSONObject(jsonForm, METADATA);
-
-                Date encounterDate = new Date();
-                if (StringUtils.isNotBlank(encounterDateField)) {
-                    Date dateTime = formatDate(encounterDateField, false);
-                    if (dateTime != null) {
-                        encounterDate = dateTime;
-                    }
-                }
-
-                Event event = (Event) new Event()
-                        .withBaseEntityId(baseEntityId)//should be different for main and subform
-                        .withEventDate(encounterDate)
-                        .withEventType(encounterType)
-                        .withLocationId(locationId)
-                        .withProviderId(providerId)
-                        .withEntityType(bindType)
-                        .withFormSubmissionId(generateRandomUUIDString())
-                        .withDateCreated(new Date());
-
-                for (int i = 0; i < fields.length(); i++) {
-                    JSONObject jsonObject = getJSONObject(fields, i);
-                    String value = getString(jsonObject, VALUE);
-                    if (StringUtils.isNotBlank(value)) {
-                        addObservation(event, jsonObject);
-                    }
-                }
-
-                if (metadata != null) {
-                    Iterator<?> keys = metadata.keys();
-
-                    while (keys.hasNext()) {
-                        String key = (String) keys.next();
-                        JSONObject jsonObject = getJSONObject(metadata, key);
-                        String value = getString(jsonObject, VALUE);
-                        if (StringUtils.isNotBlank(value)) {
-                            String entityVal = getString(jsonObject, OPENMRS_ENTITY);
-                            if (entityVal != null) {
-                                if (entityVal.equals(CONCEPT)) {
-                                    addToJSONObject(jsonObject, KEY, key);
-                                    addObservation(event, jsonObject);
-                                } else if (entityVal.equals(ENCOUNTER)) {
-                                    String entityIdVal = getString(jsonObject, OPENMRS_ENTITY_ID);
-                                    if (entityIdVal.equals(
-                                            FormEntityConstants.Encounter.encounter_date.name())) {
-                                        Date eDate = formatDate(value, false);
-                                        if (eDate != null) {
-                                            event.setEventDate(eDate);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                if (event != null) {
-                    JSONObject eventJson = new JSONObject(JsonFormUtils.gson.toJson(event));
-                    db.addEvent(event.getBaseEntityId(), eventJson);
-
-                }
-
-            } catch (Exception e) {
-                Log.e(TAG, Log.getStackTraceString(e));
-            }
-
-            return null;
-        }
-    }
-
-
     /**
      * Starts an instance of JsonFormActivity with the provided form details
      *
@@ -2316,7 +1861,7 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
      * @param currentLocationId           OpenMRS id for the current device's location
      * @throws Exception
      */
-    public static void startForm(Activity context, org.smartregister.Context openSrpContext,
+    public static void startForm(Activity context, org.smartregister.path.context.Context openSrpContext,
                                  int jsonFormActivityRequestCode,
                                  String formName, String entityId, String metaData,
                                  String currentLocationId) throws Exception {
@@ -2394,10 +1939,12 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
 
     /**
      * Popul
+     *
      * @param form
      * @param context
      */
-    public static void addRelationshipTypesQuestions(JSONObject form, org.ei.opensrp.Context context) {
+    public static void addRelationshipTypesQuestions(JSONObject
+                                                             form, org.smartregister.path.context.Context context) {
         try {
             JSONArray questions = form.getJSONObject("step1").getJSONArray("fields");
             JSONArray relationshipTypes = new JSONObject(context.allSettings().fetchRelationshipTypes()).getJSONArray("relationshipTypes");
@@ -2409,11 +1956,11 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
                     JSONArray values = new JSONArray();
                     String value = "";
 
-                    if(relationshipTypes != null && relationshipTypes.length()>0) {
+                    if (relationshipTypes != null && relationshipTypes.length() > 0) {
                         for (int n = 0; n < relationshipTypes.length(); n++) {
                             JSONObject rType = new JSONObject(relationshipTypes.getString(n));
                             values.put(rType.getString("name"));
-                            if(rType.has("key") && rType.get("key").equals(JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID)){
+                            if (rType.has("key") && rType.get("key").equals(JsonFormUtils.UNIVERSAL_OPENMRS_RELATIONSHIP_TYPE_UUID)) {
                                 value = rType.getString("name");
                             }
                         }
@@ -2431,9 +1978,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         }
     }
 
-    public static Event addMetaData(Context context, Event event, Date start) throws JSONException {
-        Map<String, String> metaFields = new HashMap<String, String>();
-    public static Event addMetaData(Context context, Event event, Date start) throws JSONException {
+    public static Event addMetaData(Context context, Event event, Date start) throws
+            JSONException {
         Map<String, String> metaFields = new HashMap<>();
         metaFields.put("deviceid", "163149AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         metaFields.put("end", "163138AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -2471,7 +2017,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
      *
      * @return The sorted options
      */
-    private static JSONArray sortTreeViewQuestionOptions(JSONArray treeViewOptions) throws JSONException {
+    private static JSONArray sortTreeViewQuestionOptions(JSONArray treeViewOptions) throws
+            JSONException {
         JSONArray sortedTree = new JSONArray();
 
         HashMap<String, JSONObject> sortMap = new HashMap<>();
@@ -2494,7 +2041,8 @@ public class JsonFormUtils extends org.smartregister.util.JsonFormUtils {
         return sortedTree;
     }
 
-    public static Event createMoveToCatchmentEvent(Context context, org.smartregister.domain.db.Event referenceEvent, String fromLocationId, String toProviderId, String toLocationId) {
+    public static Event createMoveToCatchmentEvent(Context context, org.smartregister.domain.db.Event referenceEvent, String fromLocationId, String
+            toProviderId, String toLocationId) {
 
         try {
             final String FORM_SUBMISSION_FIELD = "formsubmissionField";

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ZEIR</string>
+    <string name="app_name">KIP</string>
     <string name="invalid_device_date">Device current datetime must be after last synced server datetime which was </string>
     <string name="home_women_label">Woman</string>
     <string name="home_field_monitor_label">Stock</string>
@@ -37,7 +37,7 @@
     <string name="woman_last_vaccine">LAST VACCINE</string>
     <string name="woman_next_vaacine">NEXT VACCINE DUE</string>
     <string name="woman_alphabetical_sort">Alphabetical (Name)</string>
-    <string name="id_sort">ZEIR ID </string>
+    <string name="id_sort">KIP ID </string>
     <string name="woman_details_title">Woman Profile</string>
     <string name="day">DAY\n</string>
     <string name="bcg">BCG\n</string>
